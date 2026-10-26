@@ -1,0 +1,113 @@
+spring:
+  application:
+    name: automatecdc
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/automatecdc}
+    username: ${SPRING_DATASOURCE_USERNAME:app}
+    password: ${SPRING_DATASOURCE_PASSWORD:app}
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 2
+      # Une connexion ne survit pas a la journee : si un RESET manquait, la
+      # fuite de contexte aurait une duree de vie bornee.
+      max-lifetime: 900000
+
+  # Flyway se connecte avec le compte migration, seul a pouvoir toucher a la
+  # structure. L'application, elle, tourne avec app, qui ne le peut pas.
+  flyway:
+    enabled: true
+    user: ${APP_FLYWAY_UTILISATEUR:migration}
+    password: ${APP_FLYWAY_MOT_DE_PASSE:migration}
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  thymeleaf:
+    cache: true
+
+  servlet:
+    multipart:
+      max-file-size: 64MB
+      max-request-size: 128MB
+
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.starttls.enable: true
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+  error:
+    whitelabel:
+      enabled: false
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: true
+
+org:
+  jobrunr:
+    database:
+      type: sql
+      # Les tables de la file d'attente vivent a part des donnees metier.
+      table-prefix: taches.
+    background-job-server:
+      enabled: true
+      worker-count: 4
+    dashboard:
+      enabled: true
+      port: 8000
+    miscellaneous:
+      allow-anonymous-data-usage: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  stockage-racine: ${APP_STOCKAGE_RACINE:./donnees/fichiers}
+  url-publique: ${APP_URL_PUBLIQUE:http://localhost:8080}
+  cle-liens-signes: ${APP_CLE_LIENS_SIGNES:cle-de-developpement-a-remplacer}
+  cle-chiffrement-fichiers: ${APP_CLE_CHIFFREMENT_FICHIERS:cle-de-developpement-a-remplacer}
+  ocr:
+    url: ${APP_OCR_URL:http://localhost:5000}
+  gotenberg:
+    url: ${APP_GOTENBERG_URL:http://localhost:3000}
+  ia:
+    modele: claude-opus-5-5
+    effort: high
+    active: ${APP_IA_ACTIVE:true}
+  paiement:
+    secret-signature: ${APP_PAIEMENT_SECRET_SIGNATURE:}
+
+logging:
+  level:
+    root: INFO
+    ci.smartex.offres: INFO
+    org.hibernate.SQL: WARN

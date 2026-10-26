@@ -1,0 +1,122 @@
+# Cinq conteneurs sur un seul VPS. Seul Caddy publie des ports ;
+# tout le reste vit sur un reseau Docker interne, sans acces a internet.
+
+name: automatecdc
+
+services:
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAINE: ${DOMAINE}
+      EMAIL_ACME: ${EMAIL_ACME}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - interne
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: app
+      SPRING_DATASOURCE_PASSWORD: ${MDP_APP}
+      APP_FLYWAY_UTILISATEUR: migration
+      APP_FLYWAY_MOT_DE_PASSE: ${MDP_MIGRATION}
+      APP_OCR_URL: http://ocr:5000
+      APP_GOTENBERG_URL: http://gotenberg:3000
+      APP_STOCKAGE_RACINE: /var/automatecdc/fichiers
+      APP_URL_PUBLIQUE: https://${DOMAINE}
+      APP_CLE_LIENS_SIGNES: ${CLE_LIENS_SIGNES}
+      APP_CLE_CHIFFREMENT_FICHIERS: ${CLE_CHIFFREMENT_FICHIERS}
+      APP_PAIEMENT_SECRET_SIGNATURE: ${PAIEMENT_SECRET_SIGNATURE}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SPRING_MAIL_HOST: ${SMTP_HOTE}
+      SPRING_MAIL_PORT: ${SMTP_PORT}
+      SPRING_MAIL_USERNAME: ${SMTP_UTILISATEUR}
+      SPRING_MAIL_PASSWORD: ${SMTP_MOT_DE_PASSE}
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -Duser.language=fr -Duser.country=CI -Dfile.encoding=UTF-8"
+    volumes:
+      - fichiers:/var/automatecdc/fichiers
+    networks:
+      - interne
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gotenberg:
+        condition: service_started
+      ocr:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_SUPERUSER}
+      POSTGRES_PASSWORD: ${MDP_SUPERUSER}
+      MDP_APP: ${MDP_APP}
+      MDP_LECTURE: ${MDP_LECTURE}
+      MDP_MIGRATION: ${MDP_MIGRATION}
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - interne
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPERUSER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Rend lisibles les DAO et les attestations scannes.
+  ocr:
+    build:
+      context: ./infra/ocr
+    restart: unless-stopped
+    networks:
+      - interne
+    tmpfs:
+      - /tmp
+
+  # .doc en PDF et en texte, via LibreOffice.
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      - "--api-timeout=180s"
+      - "--libreoffice-restart-after=20"
+    networks:
+      - interne
+
+networks:
+  interne:
+    driver: bridge
+    internal: false
+
+volumes:
+  pgdata:
+  fichiers:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,40 @@
+{
+	email {$EMAIL_ACME}
+}
+
+{$DOMAINE} {
+	encode zstd gzip
+
+	# Le seul chemin public est la confirmation de paiement de l'agregateur,
+	# et il ne passe que parce que l'application verifie sa signature.
+	# Tout le reste est derriere l'authentification de l'application.
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	# Le tableau de bord des taches et les sondes ne sortent pas du VPS.
+	@interdit path /actuator/* /tableau-taches/*
+	respond @interdit 404
+
+	request_body {
+		max_size 64MB
+	}
+
+	reverse_proxy app:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+
+	log {
+		output file /data/acces.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}
