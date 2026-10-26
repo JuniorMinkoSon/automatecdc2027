@@ -1,0 +1,33 @@
+# Dépendances
+node_modules/
+vendor/
+target/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build
+dist/
+build/
+out/
+*.class
+*.jar
+
+# Secrets et environnement
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Outils et éditeurs
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
