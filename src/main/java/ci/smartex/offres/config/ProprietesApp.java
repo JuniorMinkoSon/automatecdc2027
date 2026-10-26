@@ -88,8 +88,11 @@ public class ProprietesApp {
         /** Modele Claude utilise pour l'extraction. */
         private String modele = "claude-opus-5-5";
 
-        /** Effort de raisonnement : l'extraction d'un DAO merite mieux que le minimum. */
-        private String effort = "high";
+        // Pas de reglage d'effort ici : la sortie structuree occupe deja
+        // output_config, et les deux ne se cumulent pas dans le SDK. Un DAO se
+        // lit tres bien a l'effort par defaut du modele ; si cela devait
+        // changer, il faudrait abandonner le schema impose, ce qui couterait
+        // bien plus cher en fiabilite que le peu qu'on y gagnerait.
 
         private int maxTokens = 32000;
 
@@ -102,14 +105,6 @@ public class ProprietesApp {
 
         public void setModele(String modele) {
             this.modele = modele;
-        }
-
-        public String getEffort() {
-            return effort;
-        }
-
-        public void setEffort(String effort) {
-            this.effort = effort;
         }
 
         public int getMaxTokens() {

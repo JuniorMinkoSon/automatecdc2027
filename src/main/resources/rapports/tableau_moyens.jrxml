@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Modele commun aux formulaires de moyens : personnel cle (PER-1) et materiel
+  (MAT). Quatre colonnes libres, remplies par le service de rendu selon le
+  formulaire demande.
+
+  Ces deux formulaires etaient vides dans l'offre deposee en aout 2026 alors
+  que le DAO les exigeait. Ils sont desormais remplis depuis la base, par le
+  rapprochement, et un controle bloquant verifie qu'ils le sont.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="tableau_moyens"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="AO_INTITULE" class="java.lang.String"/>
+    <parameter name="LOT_LIBELLE" class="java.lang.String"/>
+
+    <parameter name="TITRE" class="java.lang.String"/>
+    <parameter name="COLONNE_1" class="java.lang.String"/>
+    <parameter name="COLONNE_2" class="java.lang.String"/>
+    <parameter name="COLONNE_3" class="java.lang.String"/>
+    <parameter name="COLONNE_4" class="java.lang.String"/>
+
+    <parameter name="LIEU" class="java.lang.String"/>
+    <parameter name="DATE_LETTRES" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_NOM" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_FONCTION" class="java.lang.String"/>
+
+    <field name="valeur1" class="java.lang.String"/>
+    <field name="valeur2" class="java.lang.String"/>
+    <field name="valeur3" class="java.lang.String"/>
+    <field name="valeur4" class="java.lang.String"/>
+
+    <title>
+        <band height="80">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="14"/>
+                <textElement textAlignment="Center"><font size="10" isBold="true"/></textElement>
+                <text><![CDATA[RÉPUBLIQUE DE CÔTE D'IVOIRE]]></text>
+            </staticText>
+            <line>
+                <reportElement x="205" y="20" width="105" height="1"/>
+            </line>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="30" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="12" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{TITRE} == null ? "" : $P{TITRE}.toUpperCase()]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="54" width="515" height="14"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{LOT_LIBELLE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="22">
+            <rectangle>
+                <reportElement x="0" y="0" width="515" height="20" backcolor="#333333"
+                               forecolor="#333333"/>
+            </rectangle>
+            <textField isBlankWhenNull="true">
+                <reportElement x="4" y="3" width="150" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{COLONNE_1}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="158" y="3" width="130" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{COLONNE_2}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="292" y="3" width="110" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{COLONNE_3}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="406" y="3" width="105" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{COLONNE_4}]]></textFieldExpression>
+            </textField>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="20">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="4" y="2" width="150" height="14"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{valeur1}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="158" y="2" width="130" height="14"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{valeur2}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="292" y="2" width="110" height="14"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{valeur3}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="406" y="2" width="105" height="14"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{valeur4}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="19" width="515" height="1" forecolor="#DDDDDD"/>
+            </line>
+        </band>
+    </detail>
+
+
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+    <summary>
+        <band height="80">
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="16" width="235" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Fait à " + $P{LIEU} + ", le " + $P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="54" width="235" height="14"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_NOM}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="68" width="235" height="12"/>
+                <textElement><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_FONCTION}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+    <noData>
+        <band height="40">
+            <staticText>
+                <reportElement x="0" y="10" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <text><![CDATA[Aucun élément renseigné. Ce formulaire ne doit pas partir en l'état.]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>

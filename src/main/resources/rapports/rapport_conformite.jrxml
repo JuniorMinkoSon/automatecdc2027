@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Rapport de conformite, archive avec le dossier valide.
+
+  Il dit ce qui a ete verifie, par qui le dossier a ete prepare et par qui il a
+  ete valide. C'est la piece qui permet, des mois plus tard, de repondre a la
+  question : qu'est-ce qui avait ete controle avant le depot ?
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="rapport_conformite"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="AO_INTITULE" class="java.lang.String"/>
+    <parameter name="AO_NUMERO" class="java.lang.String"/>
+    <parameter name="LOT_LIBELLE" class="java.lang.String"/>
+    <parameter name="PREPARE_PAR" class="java.lang.String"/>
+    <parameter name="VALIDE_PAR" class="java.lang.String"/>
+    <parameter name="DATE_LETTRES" class="java.lang.String"/>
+    <parameter name="NB_EXECUTES" class="java.lang.Integer"/>
+    <parameter name="NB_BLOQUANTS" class="java.lang.Integer"/>
+    <parameter name="NB_AVERTISSEMENTS" class="java.lang.Integer"/>
+    <parameter name="EMPREINTE" class="java.lang.String"/>
+
+    <field name="libelle" class="java.lang.String"/>
+    <field name="niveau" class="java.lang.String"/>
+    <field name="etat" class="java.lang.String"/>
+    <field name="message" class="java.lang.String"/>
+
+    <title>
+        <band height="130">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="13" isBold="true"/></textElement>
+                <text><![CDATA[RAPPORT DE CONFORMITÉ]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="26" width="515" height="28"/>
+                <textElement textAlignment="Center"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{AO_INTITULE}
+                    + ($P{LOT_LIBELLE} == null || $P{LOT_LIBELLE}.isBlank()
+                       ? "" : "\n" + $P{LOT_LIBELLE})]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="62" width="515" height="14"/>
+                <textElement><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{NB_EXECUTES} + " contrôle(s) exécuté(s) · "
+                    + $P{NB_BLOQUANTS} + " bloquant(s) en échec · "
+                    + $P{NB_AVERTISSEMENTS} + " avertissement(s)"]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="78" width="515" height="14"/>
+                <textElement><font size="9"/></textElement>
+                <textFieldExpression><![CDATA["Préparé par : " + $P{PREPARE_PAR}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="92" width="515" height="14"/>
+                <textElement><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{VALIDE_PAR} == null || $P{VALIDE_PAR}.isBlank()
+                    ? "Non encore validé" : "Validé par : " + $P{VALIDE_PAR}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="106" width="515" height="14"/>
+                <textElement><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="22">
+            <rectangle>
+                <reportElement x="0" y="0" width="515" height="20" backcolor="#333333"
+                               forecolor="#333333"/>
+            </rectangle>
+            <staticText>
+                <reportElement x="4" y="3" width="150" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Contrôle]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="158" y="3" width="80" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Niveau]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="242" y="3" width="50" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[État]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="296" y="3" width="215" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Observation]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="22">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="4" y="2" width="150" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{libelle}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="158" y="2" width="80" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{niveau}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="242" y="2" width="50" height="16"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$F{etat}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="296" y="2" width="215" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{message}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="21" width="515" height="1" forecolor="#DDDDDD"/>
+            </line>
+        </band>
+    </detail>
+
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+    <summary>
+        <band height="50">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="12" width="515" height="30"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{EMPREINTE} == null || $P{EMPREINTE}.isBlank()
+                    ? "" : "Empreinte SHA-256 du dossier validé : " + $P{EMPREINTE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+</jasperReport>

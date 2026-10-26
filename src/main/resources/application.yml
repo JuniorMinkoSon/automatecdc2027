@@ -101,7 +101,6 @@ app:
     url: ${APP_GOTENBERG_URL:http://localhost:3000}
   ia:
     modele: claude-opus-5-5
-    effort: high
     active: ${APP_IA_ACTIVE:true}
   paiement:
     secret-signature: ${APP_PAIEMENT_SECRET_SIGNATURE:}
