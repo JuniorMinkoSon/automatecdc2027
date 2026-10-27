@@ -1,7 +1,5 @@
 package ci.smartex.offres.rendu;
 
-import ci.smartex.offres.domain.Dossier;
-import ci.smartex.offres.domain.Entreprise;
 import ci.smartex.offres.util.MontantEnLettres;
 
 import java.util.Map;
@@ -9,125 +7,211 @@ import java.util.Map;
 /**
  * Le corps des lettres types, en un seul endroit.
  *
- * <p>Ce sont des textes juridiques : ils engagent l'entreprise. Les garder ici
- * plutot que dans la base les met sous Git, donc sous revue et sous historique.
- * Une entreprise ne peut pas les modifier, et c'est voulu : un formulaire du
- * DAO ou quelqu'un aurait glisse une reserve n'est plus le formulaire du DAO.
+ * <p>Les formulations reprennent celles des dossiers de reponse deja deposes,
+ * parce que ce sont elles que les commissions ont l'habitude de lire et qu'une
+ * reformulation, meme meilleure, se remarque. Ce qui change, c'est que plus
+ * aucune identite n'y figure : le nom de l'entreprise, le signataire, le
+ * numero d'appel d'offres et l'objet du marche sont des variables, lues une
+ * fois en base et reportees partout.
  *
- * <p>Les durees et les montants viennent des parametres, jamais du texte :
- * c'est ce qui garantit que la lettre dit la meme chose que le dossier.
+ * <p>C'est precisement ce que la saisie a la main ne garantissait pas. Dans le
+ * dossier de reference, l'objet du marche est recopie a l'identique dans sept
+ * pieces : une faute de frappe dans l'une d'elles suffit a faire douter de
+ * l'ensemble.
+ *
+ * <p>Les durees s'ecrivent en lettres suivies des chiffres entre parentheses,
+ * comme dans les pieces officielles : c'est la forme qui fait foi en cas de
+ * divergence.
+ *
+ * <p>Ces textes sont sous Git, donc sous revue et sous historique, et une
+ * entreprise ne peut pas les modifier. Un formulaire du DAO ou quelqu'un
+ * aurait glisse une reserve n'est plus le formulaire du DAO.
  */
 public final class TextesLettres {
 
     private TextesLettres() {
     }
 
+    /** Les pieces que ce modele sait produire, dans l'ordre du sommaire. */
+    public static final String DELAI_EXECUTION = "DELAI_EXECUTION";
+    public static final String VALIDITE_OFFRE = "VALIDITE_OFFRE";
+    public static final String VALIDITE_GARANTIE = "VALIDITE_GARANTIE";
+    public static final String POUVOIRS = "POUVOIRS";
+    public static final String ENGAGEMENT_DELAI = "ENGAGEMENT_DELAI";
+    public static final String CONFLIT_INTERETS = "CONFLIT_INTERETS";
+
     public static String titre(String codeModele) {
         return switch (codeModele) {
-            case "DELAI_EXECUTION" -> "Engagement sur le délai d'exécution";
-            case "VALIDITE_OFFRE" -> "Engagement sur la validité de l'offre";
-            case "VALIDITE_GARANTIE" -> "Engagement sur la validité de la garantie";
-            case "POUVOIRS" -> "Pouvoirs du signataire";
-            case "CONFLIT_INTERETS" -> "Déclaration relative aux conflits d'intérêts";
-            case "DECLARATION_HONNEUR" -> "Déclaration sur l'honneur";
+            case DELAI_EXECUTION -> "Délai d'exécution des travaux";
+            case VALIDITE_OFFRE -> "Période de validité de l'offre";
+            case VALIDITE_GARANTIE -> "Période de validité de la garantie de soumission";
+            case POUVOIRS -> "Pouvoirs habilitant le soumissionnaire";
+            case ENGAGEMENT_DELAI -> "Acte d'engagement pour le respect du délai "
+                    + "de livraison des travaux";
+            case CONFLIT_INTERETS -> "Conflit d'intérêts";
             default -> codeModele;
         };
     }
 
-    public static String corps(String codeModele,
-                               Dossier dossier,
-                               Entreprise entreprise,
-                               Map<String, Object> contexte) {
-
-        String nom = entreprise.getRaisonSociale();
-        String signataire = String.valueOf(contexte.getOrDefault("SIGNATAIRE_NOM", ""));
-        String fonction = String.valueOf(contexte.getOrDefault("SIGNATAIRE_FONCTION", ""));
-
+    /**
+     * Le corps de la lettre.
+     *
+     * @param donnees les valeurs du dossier : entreprise, signataire, appel
+     *                d'offres, durees. Aucune n'est ecrite ici en dur.
+     */
+    public static String corps(String codeModele, Donnees donnees) {
         return switch (codeModele) {
-            case "DELAI_EXECUTION" -> dossier.getDelaiExecutionMois() == null
-                    ? "Le délai d'exécution n'a pas été renseigné."
-                    : """
-                      Je soussigné, %s, agissant en qualité de %s de l'entreprise %s, \
-                      déclare avoir pris connaissance du délai d'exécution fixé par le dossier \
-                      d'appel d'offres.
-
-                      À ce titre, je m'engage à exécuter l'intégralité des travaux objet du \
-                      présent marché dans un délai de %s (%d) mois à compter de la date de \
-                      notification de l'ordre de service de démarrage.
-
-                      Je reconnais que tout dépassement de ce délai m'expose aux pénalités \
-                      prévues au cahier des clauses administratives particulières.
-                      """.formatted(signataire, fonction, nom,
-                              MontantEnLettres.nombre(dossier.getDelaiExecutionMois()),
-                              dossier.getDelaiExecutionMois());
-
-            case "VALIDITE_OFFRE" -> dossier.getValiditeOffreJours() == null
-                    ? "La durée de validité de l'offre n'a pas été renseignée."
-                    : """
-                      Je soussigné, %s, agissant en qualité de %s de l'entreprise %s, \
-                      déclare que la présente offre demeure valable et m'engage pour une durée \
-                      de %s (%d) jours à compter de la date limite de dépôt des offres.
-
-                      Pendant toute cette période, je m'interdis de la retirer ou d'en modifier \
-                      les termes.
-                      """.formatted(signataire, fonction, nom,
-                              MontantEnLettres.nombre(dossier.getValiditeOffreJours()),
-                              dossier.getValiditeOffreJours());
-
-            case "VALIDITE_GARANTIE" -> dossier.getValiditeGarantieJours() == null
-                    ? "La durée de validité de la garantie n'a pas été renseignée."
-                    : """
-                      Je soussigné, %s, agissant en qualité de %s de l'entreprise %s, \
-                      déclare que la garantie de soumission jointe à la présente offre est \
-                      valable %s (%d) jours à compter de la date limite de dépôt des offres, \
-                      soit la durée de validité de l'offre augmentée de trente jours, \
-                      conformément aux instructions aux candidats.
-                      """.formatted(signataire, fonction, nom,
-                              MontantEnLettres.nombre(dossier.getValiditeGarantieJours()),
-                              dossier.getValiditeGarantieJours());
-
-            case "POUVOIRS" -> """
-                      Je soussigné, %s, %s de l'entreprise %s, certifie disposer, en vertu des \
-                      statuts de la société et des décisions de ses organes sociaux, de tous \
-                      les pouvoirs nécessaires pour engager celle-ci dans le cadre du présent \
-                      appel d'offres.
-
-                      Ces pouvoirs comprennent notamment la signature de l'offre technique et \
-                      de l'offre financière, la souscription de tout engagement s'y rapportant \
-                      et, le cas échéant, la signature du marché.
-                      """.formatted(signataire, fonction, nom);
-
-            case "CONFLIT_INTERETS" -> """
-                      Je soussigné, %s, %s de l'entreprise %s, déclare sur l'honneur que ni \
-                      l'entreprise, ni ses dirigeants, ni son personnel ne se trouvent dans une \
-                      situation de conflit d'intérêts au sens de la réglementation des marchés \
-                      publics.
-
-                      En particulier, l'entreprise n'a participé ni à la préparation du dossier \
-                      d'appel d'offres, ni aux études préalables du présent marché, et n'est \
-                      liée à aucun autre soumissionnaire du présent appel d'offres.
-
-                      Je m'engage à signaler sans délai à l'autorité contractante toute \
-                      situation de cette nature qui viendrait à se présenter.
-                      """.formatted(signataire, fonction, nom);
-
-            case "DECLARATION_HONNEUR" -> """
-                      Je soussigné, %s, %s de l'entreprise %s, déclare sur l'honneur :
-
-                      - que l'entreprise n'est ni en état de liquidation, ni en redressement \
-                      judiciaire, ni dans une situation équivalente ;
-                      - qu'elle est à jour de ses obligations fiscales et sociales ;
-                      - qu'elle n'a fait l'objet d'aucune condamnation définitive pour un délit \
-                      affectant sa moralité professionnelle ;
-                      - qu'elle ne figure sur aucune liste d'exclusion des marchés publics ;
-                      - que les renseignements et les pièces fournis à l'appui de la présente \
-                      offre sont exacts et sincères.
-
-                      Je suis informé que toute déclaration inexacte entraîne le rejet de \
-                      l'offre et peut donner lieu à des poursuites.
-                      """.formatted(signataire, fonction, nom);
-
+            case DELAI_EXECUTION -> delaiExecution(donnees);
+            case VALIDITE_OFFRE -> validiteOffre(donnees);
+            case VALIDITE_GARANTIE -> validiteGarantie(donnees);
+            case POUVOIRS -> pouvoirs(donnees);
+            case ENGAGEMENT_DELAI -> engagementDelai(donnees);
+            case CONFLIT_INTERETS -> conflitInterets(donnees);
             default -> "";
         };
+    }
+
+    // ------------------------------------------------------------------ textes
+
+    private static String delaiExecution(Donnees d) {
+        if (d.delaiMois() == null) {
+            return aCompleter("le délai d'exécution");
+        }
+        return "Je soussigné %s, %s de l'entreprise %s, déclare que le délai d'exécution "
+                .formatted(d.signataire(), d.fonction(), d.entreprise())
+                + "des travaux dans le cadre de " + referenceMarche(d)
+                + " est de %s (%02d) mois%s."
+                        .formatted(MontantEnLettres.nombre(d.delaiMois()),
+                                d.delaiMois(),
+                                d.plusieursLots() ? " pour chaque lot" : "");
+    }
+
+    private static String validiteOffre(Donnees d) {
+        if (d.validiteOffreJours() == null) {
+            return aCompleter("la durée de validité de l'offre");
+        }
+        return "Je soussigné %s, %s de l'entreprise %s, déclare que la durée de validité "
+                .formatted(d.signataire(), d.fonction(), d.entreprise())
+                + "de notre offre dans le cadre de " + referenceMarche(d)
+                + " est de %s (%d) jours."
+                        .formatted(MontantEnLettres.nombre(d.validiteOffreJours()),
+                                d.validiteOffreJours());
+    }
+
+    private static String validiteGarantie(Donnees d) {
+        if (d.validiteGarantieJours() == null) {
+            return aCompleter("la durée de validité de la garantie de soumission");
+        }
+        return "Je soussigné %s, %s de l'entreprise %s, déclare que la durée de validité "
+                .formatted(d.signataire(), d.fonction(), d.entreprise())
+                + "de la garantie de soumission dans le cadre de " + referenceMarche(d)
+                + " est de %s (%d) jours."
+                        .formatted(MontantEnLettres.nombre(d.validiteGarantieJours()),
+                                d.validiteGarantieJours());
+    }
+
+    private static String pouvoirs(Donnees d) {
+        String adresse = d.adresse() == null || d.adresse().isBlank()
+                ? "" : ", " + d.adresse();
+        return "Je soussigné %s, %s de l'entreprise %s, déclare avoir pouvoir pour signer "
+                .formatted(d.signataire(), d.fonction(), d.entreprise())
+                + "tout document concernant l'entreprise %s%s dans le cadre de "
+                        .formatted(d.entreprise(), adresse)
+                + referenceMarche(d) + ".";
+    }
+
+    private static String engagementDelai(Donnees d) {
+        if (d.delaiMois() == null) {
+            return aCompleter("le délai de livraison");
+        }
+        return """
+               Je soussigné %s, %s, agissant pour le compte de l'entreprise %s.
+
+               Après avoir pris connaissance du Dossier d'Appel d'Offres (DAO) et des \
+               documents qui y sont mentionnés, je m'ENGAGE à respecter le délai de \
+               livraison de %s (%02d) mois.
+
+               Au cas où l'entreprise %s est déclarée attributaire d'un marché, le \
+               non-respect de ce délai de livraison entraînera la résiliation dudit \
+               marché pour faute.
+
+               En foi de quoi je délivre le présent acte d'engagement pour servir et \
+               valoir ce que de droit.\
+               """.formatted(d.signataire(), d.fonction(), d.entreprise(),
+                        MontantEnLettres.nombre(d.delaiMois()), d.delaiMois(),
+                        d.entreprise());
+    }
+
+    private static String conflitInterets(Donnees d) {
+        String situation = d.adresse() == null || d.adresse().isBlank()
+                ? "" : ", située à " + d.adresse() + ",";
+        // Le dossier de reference ecrit « Je soussigné ... n'a pas », qui est
+        // une faute d'accord. Elle n'est pas reprise : le cahier des charges
+        // demande explicitement que les fautes de recopie disparaissent.
+        return "Je soussigné %s, %s de l'entreprise %s%s déclare n'avoir aucun conflit "
+                .formatted(d.signataire(), d.fonction(), d.entreprise(), situation)
+                + "d'intérêts dans le cadre de " + referenceMarche(d) + ".\n\n"
+                + "En foi de quoi je délivre le présent acte d'engagement pour servir "
+                + "et valoir ce que de droit.";
+    }
+
+    /**
+     * La reference du marche, ecrite une seule fois et reutilisee par toutes
+     * les lettres. C'est le fragment le plus recopie d'un dossier, donc celui
+     * qui concentre les fautes quand il est tape sept fois.
+     */
+    private static String referenceMarche(Donnees d) {
+        String numero = d.numeroAo() == null || d.numeroAo().isBlank()
+                ? "l'appel d'offres"
+                : "l'appel d'offres n° " + d.numeroAo();
+        return numero + " relatif aux " + d.objetMarche();
+    }
+
+    private static String aCompleter(String quoi) {
+        return "[À COMPLÉTER : " + quoi + " n'est pas renseigné dans le dossier. "
+                + "Cette pièce ne doit pas être déposée en l'état.]";
+    }
+
+    /**
+     * Ce dont une lettre type a besoin. Tout vient de la base ou du formulaire,
+     * rien du code.
+     *
+     * @param plusieursLots vrai si le marche est alloti : la formule devient
+     *                      « pour chaque lot », comme dans les dossiers deposes
+     */
+    public record Donnees(String entreprise,
+                          String adresse,
+                          String signataire,
+                          String fonction,
+                          String numeroAo,
+                          String objetMarche,
+                          Integer delaiMois,
+                          Integer validiteOffreJours,
+                          Integer validiteGarantieJours,
+                          boolean plusieursLots) {
+
+        /** Construit les donnees a partir des parametres deja assembles pour Jasper. */
+        public static Donnees depuisParametres(Map<String, Object> parametres,
+                                               Integer delaiMois,
+                                               Integer validiteOffreJours,
+                                               Integer validiteGarantieJours,
+                                               boolean plusieursLots) {
+            return new Donnees(
+                    texte(parametres, "ENTREPRISE_RAISON_SOCIALE"),
+                    texte(parametres, "ENTREPRISE_ADRESSE"),
+                    texte(parametres, "SIGNATAIRE_NOM"),
+                    texte(parametres, "SIGNATAIRE_FONCTION"),
+                    texte(parametres, "AO_NUMERO"),
+                    texte(parametres, "AO_INTITULE"),
+                    delaiMois,
+                    validiteOffreJours,
+                    validiteGarantieJours,
+                    plusieursLots);
+        }
+
+        private static String texte(Map<String, Object> parametres, String cle) {
+            Object valeur = parametres.get(cle);
+            return valeur == null ? "" : valeur.toString();
+        }
     }
 }

@@ -4,7 +4,10 @@
 --   * le montant d'une ligne de DQE n'est jamais saisi, il est calcule par la base ;
 --   * toute table metier porte organisation_id, qui porte l'isolation (voir V2).
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Pas de CREATE EXTENSION ici : gen_random_uuid() fait partie du coeur de
+-- PostgreSQL depuis la version 13, et creer une extension demanderait au
+-- compte migration des droits de superutilisateur qu'il n'a pas - et qu'il ne
+-- doit pas avoir.
 
 -- ---------------------------------------------------------------- comptes
 

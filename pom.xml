@@ -152,6 +152,17 @@
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!--
+      Les tests d'isolation ne valent que sur un vrai PostgreSQL : la Row-Level
+      Security, les colonnes generees et le declencheur du journal n'existent
+      ni en base memoire ni dans un bouchon.
+
+      La base de test est demarree par infra/test/base-de-test.sh plutot que
+      par Testcontainers : une dependance de moins, et surtout des tests qui
+      tournent sans acces au depot Maven. Les tests se desactivent d'eux-memes
+      quand aucune base n'est fournie, au lieu d'echouer.
+    -->
   </dependencies>
 
   <build>

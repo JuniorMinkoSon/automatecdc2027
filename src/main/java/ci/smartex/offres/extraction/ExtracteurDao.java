@@ -2,6 +2,7 @@ package ci.smartex.offres.extraction;
 
 import ci.smartex.offres.config.ProprietesApp;
 import com.anthropic.client.AnthropicClient;
+import org.springframework.beans.factory.ObjectProvider;
 import com.anthropic.core.JsonSchemaLocalValidation;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.StopReason;
@@ -56,12 +57,27 @@ public class ExtracteurDao {
             pour la validite de l'offre, en mois pour les delais d'execution.
             """;
 
-    private final AnthropicClient client;
+    private final ObjectProvider<AnthropicClient> client;
     private final ProprietesApp proprietes;
 
-    public ExtracteurDao(AnthropicClient client, ProprietesApp proprietes) {
+    public ExtracteurDao(ObjectProvider<AnthropicClient> client, ProprietesApp proprietes) {
         this.client = client;
         this.proprietes = proprietes;
+    }
+
+    /**
+     * Resout le client au moment de l'appel. Une cle absente se traduit alors
+     * par une extraction impossible et un DAO a saisir a la main, et non par
+     * une application qui refuse de demarrer.
+     */
+    private AnthropicClient client() {
+        try {
+            return client.getObject();
+        } catch (RuntimeException erreur) {
+            throw new ExtractionImpossibleException(
+                    "Le service d'extraction n'est pas configure (cle d'API absente ou "
+                            + "invalide). Saisissez les champs a la main.", erreur);
+        }
     }
 
     public ExtractionDao extraire(String texteDao) {
@@ -93,7 +109,7 @@ public class ExtracteurDao {
 
         StructuredMessage<ExtractionDao> reponse;
         try {
-            reponse = client.messages().create(params);
+            reponse = client().messages().create(params);
         } catch (RuntimeException erreur) {
             throw new ExtractionImpossibleException(
                     "L'analyse du DAO a echoue : " + erreur.getMessage(), erreur);

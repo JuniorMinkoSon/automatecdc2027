@@ -149,7 +149,12 @@ public class ServiceGenerationDossier {
                 Map<String, Object> parametres = parametres(contexte);
                 parametres.put("TITRE", TextesLettres.titre(modele.getCode()));
                 parametres.put("CORPS", TextesLettres.corps(modele.getCode(),
-                        contexte.dossier(), contexte.entreprise(), parametres));
+                        TextesLettres.Donnees.depuisParametres(
+                                parametres,
+                                contexte.dossier().getDelaiExecutionMois(),
+                                contexte.dossier().getValiditeOffreJours(),
+                                contexte.dossier().getValiditeGarantieJours(),
+                                contexte.nombreDeLots() > 1)));
                 pieces.add(jasper.versPdf(modele.getFichierJrxml(), parametres, List.of()));
 
             } else if ("PERSONNEL_CLE".equals(modele.getCode())) {
@@ -428,6 +433,7 @@ public class ServiceGenerationDossier {
                 depotMateriel.findAllByOrganisationId(organisation),
                 depotAffectationPersonnel.findAllByDossierId(dossierId),
                 depotAffectationMateriel.findAllByDossierId(dossierId),
+                depotLot.findAllByAppelOffresIdOrderByNumeroAsc(appelOffres.getId()).size(),
                 dateReference);
     }
 
@@ -444,6 +450,7 @@ public class ServiceGenerationDossier {
                             List<Materiel> materiel,
                             List<AffectationPersonnel> affectationsPersonnel,
                             List<AffectationMateriel> affectationsMateriel,
+                            int nombreDeLots,
                             LocalDate dateReference) {
 
         String libelleLot() {

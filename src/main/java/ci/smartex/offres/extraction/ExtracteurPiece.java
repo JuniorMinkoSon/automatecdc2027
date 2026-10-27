@@ -2,6 +2,7 @@ package ci.smartex.offres.extraction;
 
 import ci.smartex.offres.config.ProprietesApp;
 import com.anthropic.client.AnthropicClient;
+import org.springframework.beans.factory.ObjectProvider;
 import com.anthropic.core.JsonSchemaLocalValidation;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.StopReason;
@@ -38,12 +39,22 @@ public class ExtracteurPiece {
                ambigu : ecris-le dans reserve plutot que de choisir.
             """;
 
-    private final AnthropicClient client;
+    private final ObjectProvider<AnthropicClient> client;
     private final ProprietesApp proprietes;
 
-    public ExtracteurPiece(AnthropicClient client, ProprietesApp proprietes) {
+    public ExtracteurPiece(ObjectProvider<AnthropicClient> client, ProprietesApp proprietes) {
         this.client = client;
         this.proprietes = proprietes;
+    }
+
+    private AnthropicClient client() {
+        try {
+            return client.getObject();
+        } catch (RuntimeException erreur) {
+            throw new ExtractionImpossibleException(
+                    "Le service de lecture n'est pas configure. Saisissez les dates a la main.",
+                    erreur);
+        }
     }
 
     public ExtractionPiece extraire(String textePiece) {
@@ -64,7 +75,7 @@ public class ExtracteurPiece {
                 .addUserMessage("Voici le texte de la piece.\n\n" + texte)
                 .build();
 
-        var reponse = client.messages().create(params);
+        var reponse = client().messages().create(params);
 
         if (reponse.stopReason().filter(StopReason.REFUSAL::equals).isPresent()) {
             throw new ExtractionImpossibleException(
