@@ -39,7 +39,9 @@ public class PrechauffageJasper implements ApplicationRunner {
             "rapports/sommaire.jrxml",
             "rapports/separateur_lot.jrxml",
             // Dossier d'appel d'offres
+            "rapports/page_garde_dao.jrxml",
             "rapports/avis_appel_offres.jrxml",
+            "rapports/section_dao.jrxml",
             // Offre technique
             "rapports/lettre_type.jrxml",
             "rapports/tableau_moyens.jrxml",

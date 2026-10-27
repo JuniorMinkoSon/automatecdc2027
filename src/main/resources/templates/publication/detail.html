@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <h2 style="margin-top:0">Avant publication</h2>
+
+        <div th:if="${rapport.publicationPossible()}" class="message succes">
+            Aucun blocage. Le dossier et l'avis sortent sans filigrane.
+        </div>
+        <div th:unless="${rapport.publicationPossible()}" class="message erreur">
+            <span th:text="${#lists.size(rapport.bloquantes())}">0</span> point(s)
+            bloquant(s). Tant qu'ils subsistent, l'avis et le dossier portent le
+            filigrane BROUILLON — un document diffusé par erreur doit se reconnaître
+            au premier regard.
+        </div>
+
+        <div th:each="anomalie : ${rapport.anomalies()}" class="controle"
+             th:classappend="${anomalie.bloquante()} ? 'echec'">
+            <div class="titre">
+                <span th:text="${anomalie.libelle()}">Contrôle</span>
+                <span class="etat"
+                      th:classappend="${anomalie.bloquante()} ? 'bloquant' : 'brouillon'"
+                      th:text="${anomalie.bloquante()} ? 'Bloquant' : 'Avertissement'">—</span>
+            </div>
+            <div class="detail" th:text="${anomalie.message()}">Message</div>
+        </div>
+
+        <div class="actions">
+            <a class="bouton" th:href="@{/publications/{id}/dossier.pdf(id=${appel.id})}">
+                Télécharger le dossier complet (PDF)</a>
+            <a class="bouton secondaire" th:href="@{/publications/{id}/avis.pdf(id=${appel.id})}">
+                Télécharger l'avis seul (PDF)</a>
+        </div>
+    </div>
+
+    <h2>Le marché</h2>
+    <div class="carte">
+        <form th:action="@{/publications/{id}(id=${appel.id})}" method="post">
+
+            <label for="numeroAo">Numéro d'appel d'offres</label>
+            <input type="text" id="numeroAo" name="numeroAo" th:value="${appel.numeroAo}">
+
+            <label for="autoriteContractante">Autorité contractante</label>
+            <input type="text" id="autoriteContractante" name="autoriteContractante"
+                   th:value="${appel.autoriteContractante}">
+
+            <label for="financement">Source de financement</label>
+            <input type="text" id="financement" name="financement"
+                   th:value="${appel.financement}">
+
+            <label for="ligneBudgetaire">Ligne budgétaire</label>
+            <input type="text" id="ligneBudgetaire" name="ligneBudgetaire"
+                   th:value="${appel.ligneBudgetaire}">
+
+            <label for="modePassation">Mode de passation</label>
+            <input type="text" id="modePassation" name="modePassation"
+                   th:value="${appel.modePassation}">
+
+            <label for="qualificationsExigees">Exigences de qualification</label>
+            <textarea id="qualificationsExigees" name="qualificationsExigees" rows="2"
+                      th:text="${appel.qualificationsExigees}"></textarea>
+
+            <h2>Retrait et dépôt</h2>
+
+            <label for="adresseRetrait">Adresse de retrait du dossier</label>
+            <input type="text" id="adresseRetrait" name="adresseRetrait"
+                   th:value="${appel.adresseRetrait}">
+
+            <label for="contacts">Contacts</label>
+            <input type="text" id="contacts" name="contacts" th:value="${appel.contacts}">
+
+            <label for="prixDossier">Prix du dossier (F CFA)</label>
+            <input type="number" id="prixDossier" name="prixDossier" min="0"
+                   th:value="${appel.prixDossier}">
+            <p class="aide">Écrit en lettres puis en chiffres dans l'avis, à partir de
+                ce seul nombre.</p>
+
+            <label for="moyenPaiementDossier">Moyen de paiement</label>
+            <input type="text" id="moyenPaiementDossier" name="moyenPaiementDossier"
+                   th:value="${appel.moyenPaiementDossier}">
+
+            <label for="plateformeDepot">Plateforme de dépôt</label>
+            <input type="text" id="plateformeDepot" name="plateformeDepot"
+                   th:value="${appel.plateformeDepot}">
+
+            <label for="urlDepot">Adresse de la plateforme</label>
+            <input type="text" id="urlDepot" name="urlDepot" th:value="${appel.urlDepot}">
+
+            <h2>Calendrier</h2>
+
+            <label for="dateLimiteDepot">Date limite de dépôt</label>
+            <input type="date" id="dateLimiteDepot" name="dateLimiteDepot">
+
+            <label for="ouverturePlis">Ouverture des plis</label>
+            <input type="date" id="ouverturePlis" name="ouverturePlis">
+
+            <label for="lieuOuverture">Lieu d'ouverture</label>
+            <input type="text" id="lieuOuverture" name="lieuOuverture"
+                   th:value="${appel.lieuOuverture}">
+
+            <h2>Validité des offres</h2>
+
+            <label for="validiteAnnonceeJours">Durée annoncée dans l'avis (jours)</label>
+            <input type="number" id="validiteAnnonceeJours" name="validiteAnnonceeJours"
+                   min="1" th:value="${appel.validiteAnnonceeJours}">
+
+            <label for="validiteOffreJours">Durée exigée par le règlement (jours)</label>
+            <input type="number" id="validiteOffreJours" name="validiteOffreJours"
+                   min="1" th:value="${appel.validiteOffreJours}">
+            <p class="aide">Les deux doivent être identiques. Un candidat qui suit l'avis
+                verra son offre écartée pour une contradiction qu'il n'a pas commise.</p>
+
+            <div class="actions">
+                <button class="bouton" type="submit">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Lots</h2>
+    <div class="carte">
+        <table th:unless="${#lists.isEmpty(lots)}">
+            <thead>
+            <tr><th>N°</th><th>Intitulé</th><th>Localité</th>
+                <th class="nombre">Délai</th><th class="nombre">Garantie</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="lot : ${lots}">
+                <td data-intitule="N°" th:text="${lot.numero}">1</td>
+                <td data-intitule="Intitulé" th:text="${lot.intitule}">—</td>
+                <td data-intitule="Localité" th:text="${lot.localite} ?: '—'">—</td>
+                <td class="nombre" data-intitule="Délai"
+                    th:text="${lot.delaiMois != null} ? ${lot.delaiMois} + ' mois' : '— à fixer'">—</td>
+                <td class="nombre" data-intitule="Garantie"
+                    th:text="${lot.montantGarantie} ?: '— à chiffrer'">—</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <form th:action="@{/publications/{id}/lots(id=${appel.id})}" method="post"
+              style="margin-top:14px">
+            <label for="lotIntitule">Intitulé du lot</label>
+            <input type="text" id="lotIntitule" name="intitule" required>
+            <label for="lotLocalite">Localité</label>
+            <input type="text" id="lotLocalite" name="localite">
+            <label for="lotDelai">Délai d'exécution (mois)</label>
+            <input type="number" id="lotDelai" name="delaiMois" min="1">
+            <label for="lotGarantie">Cautionnement provisoire (F CFA)</label>
+            <input type="number" id="lotGarantie" name="montantGarantie" min="0">
+            <div class="actions">
+                <button class="bouton secondaire" type="submit">Ajouter le lot</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Sections du dossier</h2>
+    <div class="carte">
+        <p class="aide">Les sections réglementaires sont verrouillées : elles sont
+            identiques d'un marché à l'autre, et y glisser une clause rendrait le
+            dossier attaquable. Les autres se rédigent.</p>
+
+        <div th:each="section : ${sections}" class="controle">
+            <div class="titre">
+                <span th:text="${section.intitule}">Section</span>
+                <span class="etat valide" th:unless="${section.modifiable}">Réglementaire</span>
+                <span class="etat bloquant"
+                      th:if="${section.modifiable and section.estVide()}">À rédiger</span>
+            </div>
+
+            <form th:if="${section.modifiable}" method="post"
+                  th:action="@{/publications/{id}/sections/{code}(id=${appel.id},code=${section.code})}">
+                <textarea name="contenu" rows="4" th:text="${section.contenu}"></textarea>
+                <div class="actions">
+                    <button class="bouton secondaire" type="submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

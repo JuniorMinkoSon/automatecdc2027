@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice(assignableTypes = {
         ControleurTableauDeBord.class,
         ControleurAppelOffres.class,
+        ControleurPublication.class,
         ControleurDossier.class,
         ControleurCoffre.class,
         ControleurModeles.class,

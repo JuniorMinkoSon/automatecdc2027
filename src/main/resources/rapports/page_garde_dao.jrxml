@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Page de garde d'un dossier d'appel d'offres, cote autorite contractante.
+
+  L'objet du marche y figure une fois, et c'est cette occurrence-la que toutes
+  les sections reprennent. Dans un dossier redige a la main, il est recopie
+  dans l'avis, dans les donnees particulieres, dans le cahier des clauses
+  techniques et dans chaque formulaire : c'est le fragment qui concentre les
+  divergences.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="page_garde_dao"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="MINISTERE" class="java.lang.String"/>
+    <parameter name="REGION" class="java.lang.String"/>
+    <parameter name="AUTORITE" class="java.lang.String"/>
+    <parameter name="NUMERO_AVIS" class="java.lang.String"/>
+    <parameter name="OBJET" class="java.lang.String"/>
+    <parameter name="FINANCEMENT" class="java.lang.String"/>
+    <parameter name="LIGNE_BUDGETAIRE" class="java.lang.String"/>
+    <parameter name="ANNEE" class="java.lang.String"/>
+
+    <title>
+        <band height="720">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="0" width="250" height="60"/>
+                <textElement textAlignment="Center"><font size="9" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[
+                    ($P{MINISTERE} == null || $P{MINISTERE}.isBlank() ? "" : $P{MINISTERE} + "\n")
+                    + "------------------------------\n"
+                    + ($P{REGION} == null || $P{REGION}.isBlank() ? "" : $P{REGION} + "\n")
+                    + ($P{AUTORITE} == null ? "" : $P{AUTORITE})
+                ]]></textFieldExpression>
+            </textField>
+
+            <staticText>
+                <reportElement x="265" y="0" width="250" height="16"/>
+                <textElement textAlignment="Center"><font size="11" isBold="true"/></textElement>
+                <text><![CDATA[RÉPUBLIQUE DE CÔTE D'IVOIRE]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="265" y="16" width="250" height="12"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <text><![CDATA[Union - Discipline - Travail]]></text>
+            </staticText>
+
+            <staticText>
+                <reportElement x="0" y="150" width="515" height="26"/>
+                <textElement textAlignment="Center"><font size="18" isBold="true"/></textElement>
+                <text><![CDATA[DOSSIER D'APPEL D'OFFRES OUVERT]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="182" width="515" height="26"/>
+                <textElement textAlignment="Center"><font size="20" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{NUMERO_AVIS} == null || $P{NUMERO_AVIS}.isBlank()
+                    ? "[numéro à compléter]"
+                    : "N° " + $P{NUMERO_AVIS}]]></textFieldExpression>
+            </textField>
+
+            <!-- L'objet, encadre : c'est ce que le lecteur cherche en premier. -->
+            <rectangle>
+                <reportElement x="30" y="250" width="455" height="180" backcolor="#EFEFEF"
+                               forecolor="#999999"/>
+                <graphicElement><pen lineWidth="0.75"/></graphicElement>
+            </rectangle>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="46" y="266" width="423" height="148"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="14" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{OBJET}]]></textFieldExpression>
+            </textField>
+
+            <staticText>
+                <reportElement x="30" y="470" width="110" height="16"/>
+                <textElement><font size="11" isBold="true"/></textElement>
+                <text><![CDATA[FINANCEMENT :]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="145" y="470" width="340" height="40"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[
+                    ($P{FINANCEMENT} == null || $P{FINANCEMENT}.isBlank()
+                        ? "[à compléter : source de financement]" : $P{FINANCEMENT})
+                    + ($P{LIGNE_BUDGETAIRE} == null || $P{LIGNE_BUDGETAIRE}.isBlank()
+                        ? "" : "\nLigne : " + $P{LIGNE_BUDGETAIRE})
+                ]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="640" width="515" height="18"/>
+                <textElement textAlignment="Center"><font size="12" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{ANNEE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+</jasperReport>

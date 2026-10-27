@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Une section d'un dossier d'appel d'offres.
+
+  Un seul modele pour toutes : ce qui change d'une section a l'autre, c'est son
+  titre et son texte. Les Instructions aux candidats et le Cahier des clauses
+  administratives generales passent par ici comme les autres, a ceci pres que
+  leur texte n'est pas modifiable - le code des marches les fige, et une
+  collectivite qui y glisserait une clause produirait un dossier attaquable.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="section_dao"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="AUTORITE" class="java.lang.String"/>
+    <parameter name="NUMERO_AVIS" class="java.lang.String"/>
+    <parameter name="SECTION_NUMERO" class="java.lang.String"/>
+    <parameter name="SECTION_INTITULE" class="java.lang.String"/>
+    <parameter name="SECTION_CONTENU" class="java.lang.String"/>
+    <parameter name="FIGEE" class="java.lang.Boolean"/>
+
+    <title>
+        <band height="90">
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="10" width="515" height="18"/>
+                <textElement textAlignment="Center"><font size="11"/></textElement>
+                <textFieldExpression><![CDATA[$P{SECTION_NUMERO} == null
+                    || $P{SECTION_NUMERO}.isBlank() ? "" : "Section " + $P{SECTION_NUMERO}]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="32" width="515" height="26"/>
+                <textElement textAlignment="Center"><font size="16" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SECTION_INTITULE}]]></textFieldExpression>
+            </textField>
+
+            <line>
+                <reportElement x="150" y="68" width="215" height="1"/>
+            </line>
+
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="74" width="515" height="12"/>
+                <textElement textAlignment="Center"><font size="7" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[Boolean.TRUE.equals($P{FIGEE})
+                    ? "Texte réglementaire, non modifiable" : ""]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <detail>
+        <band height="620">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="0" width="515" height="610"/>
+                <textElement textAlignment="Justified"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{SECTION_CONTENU} == null
+                    || $P{SECTION_CONTENU}.isBlank()
+                    ? "[À COMPLÉTER : cette section est vide. Le dossier ne peut pas être "
+                      + "publié tant qu'elle n'est pas rédigée.]"
+                    : $P{SECTION_CONTENU}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[
+                    ($P{AUTORITE} == null ? "" : $P{AUTORITE})
+                    + ($P{NUMERO_AVIS} == null || $P{NUMERO_AVIS}.isBlank()
+                       ? "" : " · Appel d'offres n° " + $P{NUMERO_AVIS})
+                ]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>

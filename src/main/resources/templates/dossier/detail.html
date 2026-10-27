@@ -168,10 +168,22 @@
             </tbody>
         </table>
 
-        <div class="actions" th:unless="${#lists.isEmpty(documents)}">
-            <a class="bouton" th:href="@{/dossiers/{id}/archive(id=${dossier.id})}">
-                Télécharger le dossier (ZIP)</a>
+        <div class="actions">
+            <a class="bouton" th:href="@{/dossiers/{id}/offre-technique.pdf(id=${dossier.id})}">
+                Offre technique (PDF)</a>
+            <a class="bouton" th:href="@{/dossiers/{id}/offre-financiere.pdf(id=${dossier.id})}">
+                Offre financière (PDF)</a>
+            <a class="bouton secondaire"
+               th:href="@{/dossiers/{id}/rapport-conformite.pdf(id=${dossier.id})}">
+                Rapport de conformité (PDF)</a>
+            <a class="bouton secondaire" th:unless="${#lists.isEmpty(documents)}"
+               th:href="@{/dossiers/{id}/archive(id=${dossier.id})}">
+                Tout en ZIP</a>
         </div>
+        <p class="aide">Les PDF se produisent à la demande et ne laissent aucune trace :
+            vous voulez un document, pas un enregistrement de plus. Les versions
+            archivées naissent à la validation — ce sont elles qui portent une
+            empreinte, parce qu'elles seules sont signées.</p>
     </div>
 
 </div>

@@ -35,6 +35,10 @@
                th:classappend="${rubrique == 'appels'} ? 'actif'"
                sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
                 Appels d'offres</a>
+            <a th:href="@{/publications}"
+               th:classappend="${rubrique == 'publications'} ? 'actif'"
+               sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
+                Mes appels d'offres</a>
             <a th:href="@{/dossiers}"
                th:classappend="${rubrique == 'dossiers'} ? 'actif'">Dossiers</a>
             <a th:href="@{/coffre}"

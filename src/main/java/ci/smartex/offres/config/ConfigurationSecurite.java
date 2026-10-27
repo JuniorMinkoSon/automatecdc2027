@@ -82,7 +82,7 @@ public class ConfigurationSecurite {
                     .hasAnyRole("ADMIN_ENTREPRISE", "REDACTEUR", "OPERATEUR_MANDATE")
 
                 // Charger un DAO et preparer un brouillon.
-                .requestMatchers("/appels-offres/**")
+                .requestMatchers("/publications/**", "/appels-offres/**")
                     .hasAnyRole("ADMIN_ENTREPRISE", "REDACTEUR", "OPERATEUR_MANDATE")
 
                 .anyRequest().authenticated())

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <form th:action="@{/publications/nouveau}" method="post">
+            <label for="intitule">Objet du marché</label>
+            <input type="text" id="intitule" name="intitule" required
+                   placeholder="Travaux de construction de deux centres de santé…">
+            <p class="aide">Saisi une seule fois ici. L'avis, la page de garde, le
+                sommaire et chaque section le reprennent — c'est ce fragment qui, recopié
+                à la main, finit par diverger d'une section à l'autre.</p>
+            <div class="actions">
+                <button class="bouton" type="submit">Créer le dossier</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(appels)}" class="vide">
+            Aucun appel d'offres publié. Créez-en un pour produire son dossier et son avis.
+        </div>
+
+        <table th:unless="${#lists.isEmpty(appels)}">
+            <thead>
+            <tr>
+                <th>Objet</th><th>Numéro</th><th>Date limite</th><th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="appel : ${appels}">
+                <td data-intitule="Objet" th:text="${appel.intitule}">Objet</td>
+                <td data-intitule="Numéro"
+                    th:text="${appel.numeroAo} ?: '— à compléter'">—</td>
+                <td data-intitule="Date limite"
+                    th:text="${appel.dateLimiteDepot} ?: '— à fixer'">—</td>
+                <td><a th:href="@{/publications/{id}(id=${appel.id})}">Ouvrir</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</div>
+</body>
+</html>
