@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Page de separation entre deux lots.
+
+  Elle ne porte presque rien, et c'est voulu : dans un dossier imprime de
+  plusieurs centaines de pages, la commission doit retrouver d'un coup d'oeil
+  ou commence chaque lot. Les dossiers deposes a la main inserent cette page
+  manuellement, et c'est la qu'un lot finit par se retrouver classe sous le
+  mauvais intitule.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="separateur_lot"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="LOT_LIBELLE" class="java.lang.String"/>
+    <parameter name="LOT_LOCALITE" class="java.lang.String"/>
+    <parameter name="AO_NUMERO" class="java.lang.String"/>
+
+    <title>
+        <band height="700">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="300" width="515" height="34"/>
+                <textElement textAlignment="Center">
+                    <font size="24" isBold="true" isUnderline="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{LOT_LIBELLE} == null
+                    || $P{LOT_LIBELLE}.isBlank() ? "LOT" : $P{LOT_LIBELLE}.toUpperCase()]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="30" y="348" width="455" height="24"/>
+                <textElement textAlignment="Center"><font size="12"/></textElement>
+                <textFieldExpression><![CDATA[$P{LOT_LOCALITE}]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="386" width="515" height="16"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{AO_NUMERO} == null || $P{AO_NUMERO}.isBlank()
+                    ? "" : "Appel d'offres n° " + $P{AO_NUMERO}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="515" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>

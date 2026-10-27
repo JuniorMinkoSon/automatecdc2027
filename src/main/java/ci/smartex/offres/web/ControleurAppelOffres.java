@@ -5,11 +5,16 @@ import ci.smartex.offres.jobs.TacheAnalyseDao;
 import ci.smartex.offres.repo.DepotAppelOffres;
 import ci.smartex.offres.repo.DepotExigence;
 import ci.smartex.offres.repo.DepotLot;
+import ci.smartex.offres.rendu.ServiceAvisAppelOffres;
 import ci.smartex.offres.securite.ContexteOrganisation;
 import ci.smartex.offres.service.ServiceDossier;
 import ci.smartex.offres.service.ServiceJournal;
 import ci.smartex.offres.service.ServiceStockage;
 import org.jobrunr.scheduling.JobScheduler;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -53,6 +58,7 @@ public class ControleurAppelOffres {
     private final ServiceDossier serviceDossier;
     private final ServiceJournal journal;
     private final JobScheduler ordonnanceur;
+    private final ServiceAvisAppelOffres serviceAvis;
 
     public ControleurAppelOffres(DepotAppelOffres depotAppelOffres,
                                  DepotLot depotLot,
@@ -60,7 +66,8 @@ public class ControleurAppelOffres {
                                  ServiceStockage stockage,
                                  ServiceDossier serviceDossier,
                                  ServiceJournal journal,
-                                 JobScheduler ordonnanceur) {
+                                 JobScheduler ordonnanceur,
+                                 ServiceAvisAppelOffres serviceAvis) {
         this.depotAppelOffres = depotAppelOffres;
         this.depotLot = depotLot;
         this.depotExigence = depotExigence;
@@ -68,6 +75,7 @@ public class ControleurAppelOffres {
         this.serviceDossier = serviceDossier;
         this.journal = journal;
         this.ordonnanceur = ordonnanceur;
+        this.serviceAvis = serviceAvis;
     }
 
     @GetMapping
@@ -217,6 +225,42 @@ public class ControleurAppelOffres {
 
         redirection.addFlashAttribute("message", "Analyse relancée.");
         return "redirect:/appels-offres/" + id;
+    }
+
+    /**
+     * L'avis d'appel d'offres, cote autorite contractante.
+     *
+     * <p>Tant que les controles de publication refusent, l'avis sort
+     * filigrane : un avis diffuse par erreur doit se reconnaitre au premier
+     * regard, pas apres le premier recours.
+     */
+    @GetMapping("/{id}/avis.pdf")
+    public ResponseEntity<ByteArrayResource> avis(@PathVariable UUID id) {
+        AppelOffres appel = depotAppelOffres.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("Appel d'offres inconnu."));
+
+        byte[] pdf = serviceAvis.produire(id);
+        String nom = "Avis d'appel d'offres - %s.pdf".formatted(
+                appel.getNumeroAo() == null ? "sans numero" : appel.getNumeroAo());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, dispositionAttachement(nom))
+                .body(new ByteArrayResource(pdf));
+    }
+
+    /**
+     * Les noms de fichiers francais contiennent des accents et des apostrophes :
+     * sans l'encodage RFC 5987, le navigateur recoit des caracteres abimes.
+     */
+    private String dispositionAttachement(String nom) {
+        String sansAccents = java.text.Normalizer.normalize(nom, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('\'', ' ');
+        String encode = java.net.URLEncoder
+                .encode(nom, java.nio.charset.StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        return "attachment; filename=\"" + sansAccents + "\"; filename*=UTF-8''" + encode;
     }
 
     // ------------------------------------------------------------------ outils

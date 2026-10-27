@@ -117,6 +117,32 @@ public class ServiceGenerationDossier {
         return produits;
     }
 
+    /**
+     * Produit un document et le rend tout de suite, sans l'enregistrer.
+     *
+     * <p>C'est le chemin du telechargement : l'utilisateur veut son PDF, pas
+     * une trace de plus en base. Les versions archivees, elles, passent par
+     * {@link #genererTout} au moment de la validation - ce sont elles qui
+     * portent une empreinte, parce qu'elles seules sont signees.
+     *
+     * <p>Le filigrane suit l'etat du dossier : tant qu'il n'est pas valide,
+     * tout PDF qui en sort porte la mention BROUILLON, y compris celui-ci.
+     */
+    @Transactional(readOnly = true)
+    public byte[] produireMaintenant(UUID dossierId, DocumentGenere.Type type) {
+        Contexte contexte = rassembler(dossierId);
+
+        byte[] pdf = switch (type) {
+            case TECHNIQUE -> offreTechnique(contexte);
+            case FINANCIERE -> offreFinanciere(contexte);
+            case RAPPORT_CONFORMITE -> rapportDeConformite(contexte);
+            case RECU -> throw new RenduImpossibleException(
+                    "Un reçu ne se produit pas depuis un dossier.", null);
+        };
+
+        return contexte.dossier().porteFiligrane() ? assembleur.filigraner(pdf) : pdf;
+    }
+
     /** L'export DOCX de relecture, jamais officiel et jamais fige. */
     @Transactional(readOnly = true)
     public byte[] relectureDocx(UUID dossierId, DocumentGenere.Type type) {
@@ -141,9 +167,20 @@ public class ServiceGenerationDossier {
         garde.put("TYPE_OFFRE", "OFFRE TECHNIQUE");
         pieces.add(jasper.versPdf("rapports/page_garde.jrxml", garde, List.of()));
 
+        List<Modele> modelesTechniques = depotModele
+                .findAllByOffreAndActifTrueOrderByOrdreSommaireAsc(Modele.Offre.TECHNIQUE);
+
+        Map<String, Object> sommaire = parametres(contexte);
+        sommaire.put("TYPE_OFFRE", "OFFRE TECHNIQUE");
+        List<LigneSommaire> pieces_annoncees = new ArrayList<>();
+        int rang = 1;
+        for (Modele modele : modelesTechniques) {
+            pieces_annoncees.add(new LigneSommaire(String.valueOf(rang++), modele.getLibelle()));
+        }
+        pieces.add(jasper.versPdf("rapports/sommaire.jrxml", sommaire, pieces_annoncees));
+
         // Les lettres types, dans l'ordre du sommaire.
-        for (Modele modele : depotModele
-                .findAllByOffreAndActifTrueOrderByOrdreSommaireAsc(Modele.Offre.TECHNIQUE)) {
+        for (Modele modele : modelesTechniques) {
 
             if (modele.getFichierJrxml().endsWith("lettre_type.jrxml")) {
                 Map<String, Object> parametres = parametres(contexte);
@@ -178,6 +215,26 @@ public class ServiceGenerationDossier {
         garde.put("TYPE_OFFRE", "OFFRE FINANCIÈRE");
         pieces.add(jasper.versPdf("rapports/page_garde.jrxml", garde, List.of()));
 
+        // Le sommaire est genere a partir des pieces reellement assemblees :
+        // un sommaire tape a la main finit par annoncer une piece absente.
+        Map<String, Object> sommaire = parametres(contexte);
+        sommaire.put("TYPE_OFFRE", "OFFRE FINANCIÈRE");
+        pieces.add(jasper.versPdf("rapports/sommaire.jrxml", sommaire, List.of(
+                new LigneSommaire("1", "Lettre de soumission"),
+                new LigneSommaire("2", "Détail quantitatif et estimatif"),
+                new LigneSommaire("3", "Bordereau des prix unitaires"))));
+
+        // Des qu'un marche est alloti, la commission doit retrouver d'un coup
+        // d'oeil ou commence chaque lot dans un dossier de plusieurs centaines
+        // de pages.
+        if (contexte.nombreDeLots() > 1) {
+            Map<String, Object> separateur = parametres(contexte);
+            separateur.put("LOT_LOCALITE", contexte.lot()
+                    .map(Lot::getLocalite).orElse(""));
+            pieces.add(jasper.versPdf("rapports/separateur_lot.jrxml",
+                    separateur, List.of()));
+        }
+
         Map<String, Object> lettre = parametres(contexte);
         lettre.put("MONTANT_CHIFFRES", montantEnChiffres(contexte));
         lettre.put("MONTANT_LETTRES", montantEnLettres(contexte));
@@ -192,7 +249,32 @@ public class ServiceGenerationDossier {
         dqe.put("MENTION_REGIME", mentionRegime(contexte));
         pieces.add(jasper.versPdf("rapports/dqe.jrxml", dqe, lignesRendues(contexte)));
 
+        // Le bordereau porte chaque prix deux fois, en chiffres et en lettres.
+        // C'est la que la recopie manuelle se paie le plus cher, parce que la
+        // commission retient la version en lettres quand les deux different.
+        pieces.add(jasper.versPdf("rapports/bpu.jrxml", parametres(contexte),
+                lignesDuBordereau(contexte)));
+
         return assembleur.fusionner(pieces);
+    }
+
+    /**
+     * Les lignes du bordereau : ni quantite ni montant, c'est ce qui le
+     * distingue du detail quantitatif et estimatif. Les melanger est une
+     * non-conformite.
+     */
+    private List<LignePrix> lignesDuBordereau(Contexte contexte) {
+        return contexte.lignes().stream()
+                .map(ligne -> new LignePrix(
+                        ligne.getSection(),
+                        ligne.getNumeroPrix(),
+                        ligne.getDesignation(),
+                        ligne.getUnite(),
+                        ligne.getPrixUnitaire(),
+                        ligne.getPrixUnitaire() == null
+                                ? "[prix à saisir]"
+                                : MontantEnLettres.montant(ligne.getPrixUnitaire())))
+                .toList();
     }
 
     private byte[] rapportDeConformite(Contexte contexte) {
@@ -535,6 +617,47 @@ public class ServiceGenerationDossier {
 
         public String getValeur4() {
             return valeur4;
+        }
+    }
+
+    /** Ce que Jasper lit pour le sommaire. */
+    public record LigneSommaire(String numero, String intitule) {
+
+        public String getNumero() {
+            return numero;
+        }
+
+        public String getIntitule() {
+            return intitule;
+        }
+    }
+
+    /** Ce que Jasper lit pour le bordereau des prix unitaires. */
+    public record LignePrix(String section, String numeroPrix, String designation,
+                            String unite, Long prixUnitaire, String prixEnLettres) {
+
+        public String getSection() {
+            return section;
+        }
+
+        public String getNumeroPrix() {
+            return numeroPrix;
+        }
+
+        public String getDesignation() {
+            return designation;
+        }
+
+        public String getUnite() {
+            return unite;
+        }
+
+        public Long getPrixUnitaire() {
+            return prixUnitaire;
+        }
+
+        public String getPrixEnLettres() {
+            return prixEnLettres;
         }
     }
 

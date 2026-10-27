@@ -2,6 +2,7 @@ package ci.smartex.offres.web;
 
 import ci.smartex.offres.conformite.MoteurConformite;
 import ci.smartex.offres.domain.AppelOffres;
+import ci.smartex.offres.domain.DocumentGenere;
 import ci.smartex.offres.domain.Dossier;
 import ci.smartex.offres.domain.LigneDqe;
 import ci.smartex.offres.rendu.ServiceArchiveDossier;
@@ -270,6 +271,46 @@ public class ControleurDossier {
             redirection.addFlashAttribute("erreur", erreur.getMessage());
             return "redirect:/dossiers/" + id;
         }
+    }
+
+    // ------------------------------------------------------------------ telechargements
+
+    /**
+     * Les trois documents, telecharges tels quels.
+     *
+     * <p>Rien n'est enregistre : l'utilisateur veut son PDF, pas une trace de
+     * plus en base. Les versions archivees, elles, naissent a la validation -
+     * ce sont elles qui portent une empreinte, parce qu'elles seules sont
+     * signees.
+     */
+    @GetMapping("/{id}/offre-technique.pdf")
+    public ResponseEntity<ByteArrayResource> offreTechnique(@PathVariable UUID id) {
+        return pdf(id, DocumentGenere.Type.TECHNIQUE, "Offre technique");
+    }
+
+    @GetMapping("/{id}/offre-financiere.pdf")
+    public ResponseEntity<ByteArrayResource> offreFinanciere(@PathVariable UUID id) {
+        return pdf(id, DocumentGenere.Type.FINANCIERE, "Offre financiere");
+    }
+
+    @GetMapping("/{id}/rapport-conformite.pdf")
+    public ResponseEntity<ByteArrayResource> rapportConformite(@PathVariable UUID id) {
+        return pdf(id, DocumentGenere.Type.RAPPORT_CONFORMITE, "Rapport de conformite");
+    }
+
+    private ResponseEntity<ByteArrayResource> pdf(UUID dossierId,
+                                                  DocumentGenere.Type type,
+                                                  String libelle) {
+        Dossier dossier = serviceDossier.charger(dossierId);
+        byte[] contenu = generation.produireMaintenant(dossierId, type);
+
+        String nom = "%s - v%d%s.pdf".formatted(libelle, dossier.getVersion(),
+                dossier.porteFiligrane() ? " - BROUILLON" : "");
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, dispositionAttachement(nom))
+                .body(new ByteArrayResource(contenu));
     }
 
     // ------------------------------------------------------------------ archive

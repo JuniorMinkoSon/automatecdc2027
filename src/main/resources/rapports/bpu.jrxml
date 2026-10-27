@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Bordereau des prix unitaires.
+
+  Le BPU porte chaque prix deux fois : en chiffres et en toutes lettres. C'est
+  la que la recopie manuelle se paie le plus cher, parce qu'un bordereau
+  comporte des dizaines de lignes et que la commission corrige les ecarts
+  elle-meme - en retenant la version en lettres, qui fait foi.
+
+  Ici les deux ecritures sortent du meme entier, par la meme fonction. Il n'y a
+  donc pas d'ecart a corriger, et le prix retenu est celui que le
+  soumissionnaire a voulu.
+
+  Le BPU ne porte ni quantite ni montant : c'est ce qui le distingue du detail
+  quantitatif et estimatif, et les melanger est une non-conformite.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="bpu"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="AO_INTITULE" class="java.lang.String"/>
+    <parameter name="AO_NUMERO" class="java.lang.String"/>
+    <parameter name="LOT_LIBELLE" class="java.lang.String"/>
+    <parameter name="LIEU" class="java.lang.String"/>
+    <parameter name="DATE_LETTRES" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_NOM" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_FONCTION" class="java.lang.String"/>
+
+    <field name="section" class="java.lang.String"/>
+    <field name="numeroPrix" class="java.lang.String"/>
+    <field name="designation" class="java.lang.String"/>
+    <field name="unite" class="java.lang.String"/>
+    <field name="prixUnitaire" class="java.lang.Long"/>
+    <field name="prixEnLettres" class="java.lang.String"/>
+
+    <group name="parSection">
+        <groupExpression><![CDATA[$F{section}]]></groupExpression>
+        <groupHeader>
+            <band height="22">
+                <rectangle>
+                    <reportElement x="0" y="4" width="515" height="16" backcolor="#EFEFEF"
+                                   forecolor="#EFEFEF"/>
+                </rectangle>
+                <textField isBlankWhenNull="true">
+                    <reportElement x="4" y="5" width="507" height="14"/>
+                    <textElement><font size="9" isBold="true"/></textElement>
+                    <textFieldExpression><![CDATA[$F{section}]]></textFieldExpression>
+                </textField>
+            </band>
+        </groupHeader>
+    </group>
+
+    <title>
+        <band height="76">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="13" isBold="true"/></textElement>
+                <text><![CDATA[BORDEREAU DES PRIX UNITAIRES]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="24" width="515" height="14"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{LOT_LIBELLE}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="40" width="515" height="30"/>
+                <textElement textAlignment="Center"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{AO_INTITULE}
+                    + ($P{AO_NUMERO} == null || $P{AO_NUMERO}.isBlank()
+                       ? "" : "\nAppel d'offres n° " + $P{AO_NUMERO})]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="20">
+            <rectangle>
+                <reportElement x="0" y="0" width="515" height="18" backcolor="#333333"
+                               forecolor="#333333"/>
+            </rectangle>
+            <staticText>
+                <reportElement x="2" y="2" width="35" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[N°]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="38" y="2" width="200" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Désignation]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="240" y="2" width="38" height="14" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center"><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Unité]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="280" y="2" width="70" height="14" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Right"><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[P.U. en chiffres]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="354" y="2" width="159" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[P.U. en toutes lettres]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="26">
+            <textField isBlankWhenNull="true">
+                <reportElement x="2" y="2" width="35" height="20"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{numeroPrix}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="38" y="2" width="200" height="20"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{designation}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="240" y="2" width="38" height="20"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{unite}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0" isBlankWhenNull="true">
+                <reportElement x="280" y="2" width="70" height="20"/>
+                <textElement textAlignment="Right"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{prixUnitaire}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="354" y="2" width="159" height="20"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$F{prixEnLettres}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="25" width="515" height="1" forecolor="#DDDDDD"/>
+            </line>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+
+    <summary>
+        <band height="80">
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="16" width="235" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Fait à " + $P{LIEU} + ", le " + $P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="54" width="235" height="14"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_NOM}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="68" width="235" height="12"/>
+                <textElement><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_FONCTION}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+
+    <noData>
+        <band height="40">
+            <staticText>
+                <reportElement x="0" y="10" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <text><![CDATA[Aucun prix saisi. Ce bordereau ne doit pas être déposé.]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>

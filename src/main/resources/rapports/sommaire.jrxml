@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sommaire, commun aux trois documents : dossier d'appel d'offres, offre
+  technique, offre financiere.
+
+  Il est genere a partir des pieces reellement assemblees, et non saisi. Un
+  sommaire tape a la main finit toujours par annoncer une piece absente, ou par
+  taire une piece presente ; dans les deux cas la commission le remarque avant
+  le soumissionnaire.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="sommaire"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="TYPE_OFFRE" class="java.lang.String"/>
+    <parameter name="LOT_LIBELLE" class="java.lang.String"/>
+
+    <field name="numero" class="java.lang.String"/>
+    <field name="intitule" class="java.lang.String"/>
+
+    <title>
+        <band height="76">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="22"/>
+                <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+                <text><![CDATA[SOMMAIRE]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="28" width="515" height="16"/>
+                <textElement textAlignment="Center"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[$P{TYPE_OFFRE}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="46" width="515" height="14"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{LOT_LIBELLE}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="180" y="68" width="155" height="1"/>
+            </line>
+        </band>
+    </title>
+
+    <detail>
+        <band height="24">
+            <textField isBlankWhenNull="true">
+                <reportElement x="30" y="4" width="34" height="16"/>
+                <textElement textAlignment="Right"><font size="11"/></textElement>
+                <textFieldExpression><![CDATA[$F{numero} + "."]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="72" y="4" width="413" height="16"/>
+                <textElement><font size="11"/></textElement>
+                <textFieldExpression><![CDATA[$F{intitule}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+
+    <noData>
+        <band height="40">
+            <staticText>
+                <reportElement x="0" y="10" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="10" isItalic="true"/></textElement>
+                <text><![CDATA[Aucune pièce assemblée. Ce dossier ne doit pas être déposé.]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>

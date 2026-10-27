@@ -106,6 +106,23 @@ public class ServiceJasper {
         }
     }
 
+    /**
+     * Compile un modele d'avance et le garde en memoire.
+     *
+     * <p>La compilation d'un .jrxml coute plusieurs centaines de millisecondes.
+     * Payee au premier clic, elle fait passer une generation de deux secondes a
+     * dix, et c'est le premier utilisateur de la journee qui en fait les frais.
+     * Payee au demarrage, elle ne se voit jamais.
+     */
+    public void precharger(String cheminJrxml) {
+        modele(cheminJrxml);
+    }
+
+    /** Les modeles deja compiles, pour le journal de demarrage. */
+    public int nombreDeModelesCharges() {
+        return compiles.size();
+    }
+
     private JasperReport modele(String cheminJrxml) {
         return compiles.computeIfAbsent(cheminJrxml, chemin -> {
             try (InputStream source = new ClassPathResource(chemin).getInputStream()) {
