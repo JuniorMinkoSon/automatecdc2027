@@ -5,6 +5,7 @@ import ci.smartex.offres.domain.AppelOffres;
 import ci.smartex.offres.domain.DocumentGenere;
 import ci.smartex.offres.domain.Dossier;
 import ci.smartex.offres.domain.LigneDqe;
+import ci.smartex.offres.domain.TachePlanning;
 import ci.smartex.offres.rendu.ServiceArchiveDossier;
 import ci.smartex.offres.rendu.ServiceGenerationDossier;
 import ci.smartex.offres.repo.*;
@@ -49,6 +50,7 @@ public class ControleurDossier {
     private final DepotAppelOffres depotAppelOffres;
     private final DepotLot depotLot;
     private final DepotDocumentGenere depotDocumentGenere;
+    private final DepotTachePlanning depotTachePlanning;
 
     public ControleurDossier(ServiceDossier serviceDossier,
                              ServiceDqe serviceDqe,
@@ -59,7 +61,8 @@ public class ControleurDossier {
                              DepotDossier depotDossier,
                              DepotAppelOffres depotAppelOffres,
                              DepotLot depotLot,
-                             DepotDocumentGenere depotDocumentGenere) {
+                             DepotDocumentGenere depotDocumentGenere,
+                             DepotTachePlanning depotTachePlanning) {
         this.serviceDossier = serviceDossier;
         this.serviceDqe = serviceDqe;
         this.rapprochement = rapprochement;
@@ -70,6 +73,7 @@ public class ControleurDossier {
         this.depotAppelOffres = depotAppelOffres;
         this.depotLot = depotLot;
         this.depotDocumentGenere = depotDocumentGenere;
+        this.depotTachePlanning = depotTachePlanning;
     }
 
     @GetMapping
@@ -88,6 +92,7 @@ public class ControleurDossier {
         modele.addAttribute("rapport", moteur.dernierRapport(id));
         modele.addAttribute("documents",
                 depotDocumentGenere.findAllByDossierIdOrderByGenereLeDesc(id));
+        modele.addAttribute("taches", depotTachePlanning.findAllByDossierIdOrderByOrdreAsc(id));
         return "dossier/detail";
     }
 
@@ -158,6 +163,99 @@ public class ControleurDossier {
             redirection.addFlashAttribute("erreur", erreur.getMessage());
         }
         return "redirect:/dossiers/" + id + "/prix";
+    }
+
+    // ------------------------------------------------------------------ planning
+
+    /**
+     * Ajoute une tache au planning.
+     *
+     * <p>La commission verifie une seule chose : que la derniere tache
+     * s'acheve dans le delai engage. Le formulaire signale le depassement des
+     * la saisie, plutot que de le laisser decouvrir a l'execution.
+     */
+    @PostMapping("/{id}/planning")
+    @Transactional
+    public String ajouterTache(@PathVariable UUID id,
+                               @RequestParam String libelle,
+                               @RequestParam(defaultValue = "1") int debutMois,
+                               @RequestParam(defaultValue = "1") int dureeMois,
+                               RedirectAttributes redirection) {
+
+        Dossier dossier = serviceDossier.charger(id);
+        if (!dossier.estModifiable()) {
+            redirection.addFlashAttribute("erreur",
+                    "Ce dossier est figé : créez une nouvelle version pour le corriger.");
+            return "redirect:/dossiers/" + id;
+        }
+
+        int suivant = depotTachePlanning.findAllByDossierIdOrderByOrdreAsc(id).stream()
+                .mapToInt(TachePlanning::getOrdre).max().orElse(0) + 1;
+
+        TachePlanning tache = new TachePlanning();
+        tache.setOrganisationId(ContexteOrganisation.exigerOrganisation());
+        tache.setDossierId(id);
+        tache.setLibelle(libelle.trim());
+        tache.setDebutMois(Math.max(1, debutMois));
+        tache.setDureeMois(Math.max(1, dureeMois));
+        tache.setOrdre(suivant);
+        depotTachePlanning.save(tache);
+
+        Integer delai = dossier.getDelaiExecutionMois();
+        if (delai != null && tache.finMois() > delai) {
+            redirection.addFlashAttribute("erreur",
+                    "Cette tâche s'achève au mois %d, au-delà du délai engagé de %d mois."
+                            .formatted(tache.finMois(), delai));
+        } else {
+            redirection.addFlashAttribute("message", "Tâche ajoutée.");
+        }
+        return "redirect:/dossiers/" + id;
+    }
+
+    @PostMapping("/{id}/planning/{tacheId}/retirer")
+    @Transactional
+    public String retirerTache(@PathVariable UUID id, @PathVariable UUID tacheId,
+                               RedirectAttributes redirection) {
+        depotTachePlanning.findById(tacheId)
+                .filter(tache -> tache.getDossierId().equals(id))
+                .ifPresent(depotTachePlanning::delete);
+        redirection.addFlashAttribute("message", "Tâche retirée.");
+        return "redirect:/dossiers/" + id;
+    }
+
+    /**
+     * La declaration sur les marches non executes.
+     *
+     * <p>Elle ne se deduit pas : un marche inexecute ne laisse pas de trace
+     * chez celui qui ne l'a pas execute. C'est donc le soumissionnaire qui
+     * declare, et il engage sa responsabilite.
+     */
+    @PostMapping("/{id}/antecedents")
+    @Transactional
+    public String declarerAntecedents(@PathVariable UUID id,
+                                      @RequestParam(defaultValue = "false") boolean sansAntecedent,
+                                      @RequestParam(required = false) String detail,
+                                      RedirectAttributes redirection) {
+
+        Dossier dossier = serviceDossier.charger(id);
+        if (!dossier.estModifiable()) {
+            redirection.addFlashAttribute("erreur", "Ce dossier est figé.");
+            return "redirect:/dossiers/" + id;
+        }
+
+        if (!sansAntecedent && (detail == null || detail.isBlank())) {
+            redirection.addFlashAttribute("erreur",
+                    "Déclarer des marchés non exécutés sans les détailler laisse le "
+                            + "formulaire incomplet : la commission demandera lesquels.");
+            return "redirect:/dossiers/" + id;
+        }
+
+        dossier.setSansAntecedent(sansAntecedent);
+        dossier.setAntecedentsDetail(sansAntecedent ? null : detail);
+        depotDossier.save(dossier);
+
+        redirection.addFlashAttribute("message", "Déclaration enregistrée.");
+        return "redirect:/dossiers/" + id;
     }
 
     // ------------------------------------------------------------------ moyens

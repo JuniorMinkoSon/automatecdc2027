@@ -142,6 +142,81 @@
         </p>
     </div>
 
+    <h2>Planning d'exécution</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(taches)}" class="vide">
+            Aucune tâche. Le formulaire de planning ne doit pas partir vide.
+        </div>
+
+        <table th:unless="${#lists.isEmpty(taches)}">
+            <thead>
+            <tr><th>Tâche</th><th class="nombre">Début</th><th class="nombre">Durée</th>
+                <th class="nombre">Fin</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="tache : ${taches}">
+                <td data-intitule="Tâche" th:text="${tache.libelle}">Tâche</td>
+                <td class="nombre" data-intitule="Début"
+                    th:text="'mois ' + ${tache.debutMois}">1</td>
+                <td class="nombre" data-intitule="Durée"
+                    th:text="${tache.dureeMois} + ' mois'">1</td>
+                <td class="nombre" data-intitule="Fin"
+                    th:style="${dossier.delaiExecutionMois != null
+                               and tache.finMois() > dossier.delaiExecutionMois}
+                              ? 'color:var(--bloquant);font-weight:600'"
+                    th:text="'mois ' + ${tache.finMois()}">1</td>
+                <td>
+                    <form th:if="${dossier.estModifiable()}" method="post"
+                          th:action="@{/dossiers/{id}/planning/{t}/retirer(id=${dossier.id},t=${tache.id})}">
+                        <button class="bouton secondaire" type="submit">Retirer</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <form th:if="${dossier.estModifiable()}" method="post"
+              th:action="@{/dossiers/{id}/planning(id=${dossier.id})}" style="margin-top:14px">
+            <label for="tacheLibelle">Tâche</label>
+            <input type="text" id="tacheLibelle" name="libelle" required
+                   placeholder="Installation de chantier, terrassements…">
+            <label for="tacheDebut">Mois de début</label>
+            <input type="number" id="tacheDebut" name="debutMois" min="1" value="1">
+            <label for="tacheDuree">Durée (mois)</label>
+            <input type="number" id="tacheDuree" name="dureeMois" min="1" value="1">
+            <p class="aide" th:if="${dossier.delaiExecutionMois != null}"
+               th:text="'Délai engagé : ' + ${dossier.delaiExecutionMois}
+                        + ' mois. Une tâche qui dépasse est signalée immédiatement.'"></p>
+            <div class="actions">
+                <button class="bouton secondaire" type="submit">Ajouter la tâche</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Antécédents de marchés non exécutés</h2>
+    <div class="carte">
+        <p class="aide">Cette déclaration ne se déduit pas : un marché inexécuté ne laisse
+            pas de trace chez celui qui ne l'a pas exécuté. Vous la signez.</p>
+
+        <form th:action="@{/dossiers/{id}/antecedents(id=${dossier.id})}" method="post">
+            <label>
+                <input type="checkbox" name="sansAntecedent" value="true"
+                       th:checked="${dossier.sansAntecedent}"
+                       th:disabled="${!dossier.estModifiable()}">
+                Aucun marché non exécuté depuis la date de référence
+            </label>
+
+            <label for="detailAntecedents">Si des marchés sont concernés, lesquels</label>
+            <textarea id="detailAntecedents" name="detail" rows="3"
+                      th:text="${dossier.antecedentsDetail}"
+                      th:readonly="${!dossier.estModifiable()}"></textarea>
+
+            <div class="actions" th:if="${dossier.estModifiable()}">
+                <button class="bouton secondaire" type="submit">Enregistrer la déclaration</button>
+            </div>
+        </form>
+    </div>
+
     <h2>Documents produits</h2>
     <div class="carte">
         <div th:if="${#lists.isEmpty(documents)}" class="vide">

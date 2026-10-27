@@ -57,9 +57,11 @@ public class PrechauffageJasper implements ApplicationRunner {
             "rapports/recu_paiement.jrxml");
 
     private final ServiceJasper jasper;
+    private final AssembleurPdf assembleur;
 
-    public PrechauffageJasper(ServiceJasper jasper) {
+    public PrechauffageJasper(ServiceJasper jasper, AssembleurPdf assembleur) {
         this.jasper = jasper;
+        this.assembleur = assembleur;
     }
 
     @Override
@@ -81,8 +83,30 @@ public class PrechauffageJasper implements ApplicationRunner {
             }
         }
 
+        rechaufferLAssemblage();
+
         LOG.info("{} modele(s) de rapport compiles en {} ms. La premiere generation sera "
                         + "aussi rapide que les suivantes.",
                 compiles, System.currentTimeMillis() - debut);
+    }
+
+    /**
+     * Fusionne et filigrane deux pages a blanc.
+     *
+     * <p>PDFBox charge ses classes a la premiere fusion, ce qui coutait cinq
+     * secondes au premier dossier assemble de la journee - toujours a la meme
+     * personne, celle qui ouvre l'application en premier. Le resultat de cette
+     * fusion est jete : seul le chargement comptait.
+     */
+    private void rechaufferLAssemblage() {
+        try {
+            byte[] page = jasper.versPdf("rapports/separateur_lot.jrxml",
+                    java.util.Map.of("LOT_LIBELLE", "prechauffage"), List.of());
+            assembleur.filigraner(assembleur.fusionner(List.of(page, page)));
+        } catch (RuntimeException erreur) {
+            // Un prechauffage qui echoue ne doit rien empecher : la premiere
+            // generation sera simplement plus lente.
+            LOG.warn("Prechauffage de l'assemblage impossible : {}", erreur.getMessage());
+        }
     }
 }

@@ -2,10 +2,12 @@ package ci.smartex.offres.web;
 
 import ci.smartex.offres.domain.AppelOffres;
 import ci.smartex.offres.domain.Lot;
+import ci.smartex.offres.rendu.CharpenteDpao;
 import ci.smartex.offres.rendu.ServiceAvisAppelOffres;
 import ci.smartex.offres.rendu.ServiceDossierAppelOffres;
 import ci.smartex.offres.repo.DepotAppelOffres;
 import ci.smartex.offres.repo.DepotLot;
+import ci.smartex.offres.repo.DepotDonneeDpao;
 import ci.smartex.offres.repo.DepotSectionDao;
 import ci.smartex.offres.securite.ContexteOrganisation;
 import ci.smartex.offres.service.ServiceJournal;
@@ -23,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -46,19 +50,22 @@ public class ControleurPublication {
     private final ServiceAvisAppelOffres serviceAvis;
     private final ServiceDossierAppelOffres serviceDossierAo;
     private final ServiceJournal journal;
+    private final DepotDonneeDpao depotDpao;
 
     public ControleurPublication(DepotAppelOffres depotAppelOffres,
                                  DepotLot depotLot,
                                  DepotSectionDao depotSection,
                                  ServiceAvisAppelOffres serviceAvis,
                                  ServiceDossierAppelOffres serviceDossierAo,
-                                 ServiceJournal journal) {
+                                 ServiceJournal journal,
+                                 DepotDonneeDpao depotDpao) {
         this.depotAppelOffres = depotAppelOffres;
         this.depotLot = depotLot;
         this.depotSection = depotSection;
         this.serviceAvis = serviceAvis;
         this.serviceDossierAo = serviceDossierAo;
         this.journal = journal;
+        this.depotDpao = depotDpao;
     }
 
     @GetMapping
@@ -111,6 +118,7 @@ public class ControleurPublication {
         modele.addAttribute("appel", appel);
         modele.addAttribute("lots", depotLot.findAllByAppelOffresIdOrderByNumeroAsc(id));
         modele.addAttribute("sections", serviceDossierAo.preparerLesSections(id));
+        modele.addAttribute("dpao", donneesDpaoAffichees(id, appel));
         modele.addAttribute("rapport", serviceAvis.controler(id));
         return "publication/detail";
     }
@@ -218,6 +226,69 @@ public class ControleurPublication {
         }, () -> redirection.addFlashAttribute("erreur", "Section inconnue."));
 
         return "redirect:/publications/" + id;
+    }
+
+    /**
+     * Enregistre les valeurs du DPAO.
+     *
+     * <p>Seuls les articles non derives sont acceptes : les autres se
+     * deduisent du marche, et les laisser saisir reviendrait a autoriser le
+     * dossier a se contredire lui-meme.
+     */
+    @PostMapping("/{id}/dpao")
+    @Transactional
+    public String enregistrerDpao(@PathVariable UUID id,
+                                  @RequestParam Map<String, String> champs,
+                                  RedirectAttributes redirection) {
+        charger(id);
+        int enregistres = 0;
+
+        for (Map.Entry<String, String> champ : champs.entrySet()) {
+            if (!champ.getKey().startsWith("dpao_")) {
+                continue;
+            }
+            UUID identifiant = UUID.fromString(champ.getKey().substring("dpao_".length()));
+            var trouve = depotDpao.findById(identifiant);
+            if (trouve.isEmpty() || trouve.get().isDerivee()) {
+                continue;
+            }
+            trouve.get().setValeur(vide(champ.getValue()));
+            depotDpao.save(trouve.get());
+            enregistres++;
+        }
+
+        journal.enregistrer("DPAO_MODIFIE", "appel_offres", id, enregistres + " article(s)");
+        redirection.addFlashAttribute("message",
+                enregistres + " donnée(s) particulière(s) enregistrée(s).");
+        return "redirect:/publications/" + id;
+    }
+
+    /**
+     * Les articles tels qu'ils s'affichent : les valeurs derivees sont
+     * calculees ici, pour que l'autorite contractante voie ce que le dossier
+     * dira, sans pouvoir le modifier a cet endroit.
+     */
+    private List<ArticleAffiche> donneesDpaoAffichees(UUID appelOffresId, AppelOffres appel) {
+        List<Lot> lots = depotLot.findAllByAppelOffresIdOrderByNumeroAsc(appelOffresId);
+        return depotDpao.findAllByAppelOffresIdOrderByOrdreAsc(appelOffresId).stream()
+                .map(donnee -> new ArticleAffiche(
+                        donnee.getId(),
+                        donnee.getReferenceIc(),
+                        donnee.getLibelle(),
+                        donnee.isDerivee(),
+                        donnee.isDerivee()
+                                ? CharpenteDpao.valeurDerivee(donnee.getReferenceIc(), appel, lots)
+                                : donnee.getValeur()))
+                .toList();
+    }
+
+    /** Un article du DPAO prêt pour l'écran. */
+    public record ArticleAffiche(UUID id, String reference, String libelle,
+                                 boolean derivee, String valeur) {
+
+        public boolean aRemplir() {
+            return !derivee && (valeur == null || valeur.isBlank());
+        }
     }
 
     // ------------------------------------------------------------------ PDF

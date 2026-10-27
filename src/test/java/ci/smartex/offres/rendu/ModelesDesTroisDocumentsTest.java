@@ -97,7 +97,7 @@ class ModelesDesTroisDocumentsTest {
     void prechauffage() {
         // C'est la réponse à « temps records » : la compilation est payée une
         // fois au démarrage, jamais devant l'utilisateur.
-        new PrechauffageJasper(jasper).run(null);
+        new PrechauffageJasper(jasper, assembleur).run(null);
 
         assertThat(jasper.nombreDeModelesCharges())
                 .as("tous les modèles livrés doivent compiler")

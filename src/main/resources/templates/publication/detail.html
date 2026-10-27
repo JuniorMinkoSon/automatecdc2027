@@ -156,6 +156,37 @@
         </form>
     </div>
 
+    <h2>Données particulières de l'appel d'offres</h2>
+    <div class="carte">
+        <p class="aide">Les articles marqués « déduit » se calculent à partir du marché :
+            objet, lots, délais, garanties, dates. Vous ne les saisissez pas, donc le
+            dossier ne peut pas se contredire lui-même.</p>
+
+        <form th:action="@{/publications/{id}/dpao(id=${appel.id})}" method="post">
+            <div th:each="article : ${dpao}" class="controle">
+                <div class="titre">
+                    <span th:text="${article.reference()}">IC 1.1</span>
+                    <span th:text="' — ' + ${article.libelle()}">Libellé</span>
+                    <span class="etat valide" th:if="${article.derivee()}">déduit</span>
+                    <span class="etat bloquant" th:if="${article.aRemplir()}">à compléter</span>
+                </div>
+
+                <div th:if="${article.derivee()}" class="detail"
+                     style="white-space:pre-line"
+                     th:text="${article.valeur()} ?: '— sera calculé dès que le marché sera renseigné'">
+                    Valeur</div>
+
+                <textarea th:unless="${article.derivee()}" rows="2"
+                          th:name="'dpao_' + ${article.id()}"
+                          th:text="${article.valeur()}"></textarea>
+            </div>
+
+            <div class="actions">
+                <button class="bouton" type="submit">Enregistrer les données particulières</button>
+            </div>
+        </form>
+    </div>
+
     <h2>Sections du dossier</h2>
     <div class="carte">
         <p class="aide">Les sections réglementaires sont verrouillées : elles sont
