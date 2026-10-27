@@ -98,6 +98,19 @@
       <version>${jasperreports.version}</version>
     </dependency>
 
+    <!--
+      Generation des pieces en Word. Les modeles televerses par une entreprise
+      gardent leur mise en page, leurs tableaux et leurs en-tetes : on remplace
+      les champs a l'interieur du document plutot que de le reconstruire, parce
+      qu'un dossier reconstruit ne ressemble plus a celui que la commission a
+      l'habitude de lire.
+    -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.3.0</version>
+    </dependency>
+
     <!-- Fusion des PDF du dossier final -->
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
