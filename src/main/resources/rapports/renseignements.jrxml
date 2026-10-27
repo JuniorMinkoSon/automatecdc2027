@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Formulaire de renseignements sur le candidat.
+
+  C'est le formulaire du bailleur : sa numerotation et son libelle sont imposes,
+  un candidat qui le remplace par un document de son choix presente une offre
+  non conforme meme si le contenu est equivalent. Les valeurs, elles, viennent
+  toutes de la fiche de l'entreprise, saisie une seule fois.
+
+  Les lignes qui ne concernent pas le candidat portent « Néant » plutot que
+  d'etre laissees vides : un blanc se lit comme un oubli, et la commission ne
+  demande pas.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="renseignements"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_CC" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_ADRESSE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_BP" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_TELEPHONES" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_EMAIL" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_REGIME" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_ANNEE" class="java.lang.String"/>
+    <parameter name="PAYS" class="java.lang.String"/>
+    <parameter name="GROUPEMENT" class="java.lang.String"/>
+
+    <parameter name="AO_NUMERO" class="java.lang.String"/>
+    <parameter name="DATE_LETTRES" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_NOM" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_FONCTION" class="java.lang.String"/>
+
+    <title>
+        <band height="70">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="22"/>
+                <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+                <text><![CDATA[Formulaire de renseignements sur le candidat]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="30" width="515" height="14"/>
+                <textElement textAlignment="Right"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA["Date : " + $P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="44" width="515" height="14"/>
+                <textElement textAlignment="Right"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{AO_NUMERO} == null || $P{AO_NUMERO}.isBlank()
+                    ? "" : "Appel d'offres numéro : " + $P{AO_NUMERO}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <detail>
+        <band height="440">
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="0" width="515" height="22"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["1.  Nom du candidat : "
+                    + $P{ENTREPRISE_RAISON_SOCIALE}]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="28" width="515" height="22"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["2.  En cas de groupement, noms de tous les membres : "
+                    + ($P{GROUPEMENT} == null || $P{GROUPEMENT}.isBlank()
+                       ? "Néant" : $P{GROUPEMENT})]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="56" width="250" height="34"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["3.a)  Pays où le candidat est légalement\nenregistré : "
+                    + ($P{PAYS} == null || $P{PAYS}.isBlank() ? "Côte d'Ivoire" : $P{PAYS})]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="265" y="56" width="250" height="34"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["3.b)  Numéro d'identification de\nl'entreprise : "
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "[à compléter]" : $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="96" width="515" height="22"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["4.  Année d'enregistrement du candidat : "
+                    + ($P{ENTREPRISE_ANNEE} == null || $P{ENTREPRISE_ANNEE}.isBlank()
+                       ? "[à compléter]" : $P{ENTREPRISE_ANNEE})]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="124" width="515" height="34"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["5.  Adresse officielle du candidat dans le pays d'enregistrement : "
+                    + ($P{ENTREPRISE_ADRESSE} == null || $P{ENTREPRISE_ADRESSE}.isBlank()
+                       ? "[à compléter]" : $P{ENTREPRISE_ADRESSE})]]></textFieldExpression>
+            </textField>
+
+            <staticText>
+                <reportElement x="0" y="168" width="515" height="18"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <text><![CDATA[6.  Renseignements sur le représentant dûment habilité du candidat]]></text>
+            </staticText>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="20" y="190" width="495" height="110"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[
+                    "Nom : " + ($P{SIGNATAIRE_NOM} == null ? "[à compléter]" : $P{SIGNATAIRE_NOM})
+                    + "\nFonction : " + ($P{SIGNATAIRE_FONCTION} == null ? "[à compléter]" : $P{SIGNATAIRE_FONCTION})
+                    + "\nAdresse : " + ($P{ENTREPRISE_BP} == null || $P{ENTREPRISE_BP}.isBlank()
+                        ? "[à compléter]" : $P{ENTREPRISE_BP})
+                    + "\nTéléphone : " + ($P{ENTREPRISE_TELEPHONES} == null || $P{ENTREPRISE_TELEPHONES}.isBlank()
+                        ? "[à compléter]" : $P{ENTREPRISE_TELEPHONES})
+                    + "\nAdresse électronique : " + ($P{ENTREPRISE_EMAIL} == null || $P{ENTREPRISE_EMAIL}.isBlank()
+                        ? "[à compléter]" : $P{ENTREPRISE_EMAIL})
+                ]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="306" width="515" height="22"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["7.  Régime d'imposition : "
+                    + ($P{ENTREPRISE_REGIME} == null || $P{ENTREPRISE_REGIME}.isBlank()
+                       ? "Néant" : $P{ENTREPRISE_REGIME})
+                    + ($P{ENTREPRISE_CC} == null || $P{ENTREPRISE_CC}.isBlank()
+                       ? "" : "   ·   Compte contribuable : " + $P{ENTREPRISE_CC})]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="356" width="235" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Fait le " + $P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="396" width="235" height="14"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_NOM}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="410" width="235" height="12"/>
+                <textElement><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_FONCTION}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>

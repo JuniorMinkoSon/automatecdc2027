@@ -45,11 +45,16 @@ public class PrechauffageJasper implements ApplicationRunner {
             // Offre technique
             "rapports/lettre_type.jrxml",
             "rapports/tableau_moyens.jrxml",
+            "rapports/renseignements.jrxml",
+            "rapports/antecedents.jrxml",
+            "rapports/planning.jrxml",
             "rapports/rapport_conformite.jrxml",
             // Offre financiere
             "rapports/lettre_soumission.jrxml",
             "rapports/dqe.jrxml",
-            "rapports/bpu.jrxml");
+            "rapports/bpu.jrxml",
+            // Facturation
+            "rapports/recu_paiement.jrxml");
 
     private final ServiceJasper jasper;
 

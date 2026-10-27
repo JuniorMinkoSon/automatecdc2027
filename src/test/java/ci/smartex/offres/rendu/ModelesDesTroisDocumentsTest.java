@@ -101,7 +101,7 @@ class ModelesDesTroisDocumentsTest {
 
         assertThat(jasper.nombreDeModelesCharges())
                 .as("tous les modèles livrés doivent compiler")
-                .isEqualTo(12);
+                .isEqualTo(16);
     }
 
     // ------------------------------------------------------------------ outils

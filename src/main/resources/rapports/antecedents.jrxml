@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Antecedents de marches non executes.
+
+  Le formulaire distingue deux declarations exclusives : soit aucun marche n'a
+  ete inexecute depuis la date de reference, soit la liste doit etre produite.
+  Le dossier de reference cochait la premiere et laissait pourtant le tableau
+  rempli de « NEANT », ce qui revient a declarer deux fois la meme chose - et
+  a laisser croire que la seconde case a ete cochee par inadvertance.
+
+  Ici une seule declaration apparait, celle qui correspond aux references
+  enregistrees. Les deux ne peuvent pas coexister.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="antecedents"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="AO_NUMERO" class="java.lang.String"/>
+    <parameter name="AO_INTITULE" class="java.lang.String"/>
+    <parameter name="DATE_LETTRES" class="java.lang.String"/>
+    <parameter name="DATE_REFERENCE" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_NOM" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_FONCTION" class="java.lang.String"/>
+    <parameter name="AUCUN_ANTECEDENT" class="java.lang.Boolean"/>
+
+    <field name="annee" class="java.lang.String"/>
+    <field name="fraction" class="java.lang.String"/>
+    <field name="contrat" class="java.lang.String"/>
+    <field name="montant" class="java.lang.String"/>
+
+    <title>
+        <band height="130">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="22"/>
+                <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+                <text><![CDATA[Antécédents de marchés non exécutés]]></text>
+            </staticText>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="30" width="515" height="34"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[
+                    "Nom légal du candidat : " + $P{ENTREPRISE_RAISON_SOCIALE}
+                    + "\nDate : " + $P{DATE_LETTRES}
+                    + ($P{AO_NUMERO} == null || $P{AO_NUMERO}.isBlank()
+                       ? "" : "\nN° de l'appel d'offres : " + $P{AO_NUMERO})
+                ]]></textFieldExpression>
+            </textField>
+
+            <!-- Une seule des deux declarations apparait : elles s'excluent. -->
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="74" width="515" height="50">
+                    <printWhenExpression><![CDATA[Boolean.TRUE.equals($P{AUCUN_ANTECEDENT})]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Justified"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[
+                    "Il n'y a pas eu de marché non exécuté depuis le "
+                    + ($P{DATE_REFERENCE} == null || $P{DATE_REFERENCE}.isBlank()
+                       ? "[date de référence à compléter]" : $P{DATE_REFERENCE})
+                    + ", date stipulée aux critères d'évaluation et de qualification."
+                ]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="74" width="515" height="50">
+                    <printWhenExpression><![CDATA[!Boolean.TRUE.equals($P{AUCUN_ANTECEDENT})]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Justified"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA[
+                    "Marché(s) non exécuté(s) depuis le "
+                    + ($P{DATE_REFERENCE} == null || $P{DATE_REFERENCE}.isBlank()
+                       ? "[date de référence à compléter]" : $P{DATE_REFERENCE})
+                    + ", date stipulée aux critères d'évaluation et de qualification :"
+                ]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="22">
+            <printWhenExpression><![CDATA[!Boolean.TRUE.equals($P{AUCUN_ANTECEDENT})]]></printWhenExpression>
+            <rectangle>
+                <reportElement x="0" y="0" width="515" height="20" backcolor="#333333"
+                               forecolor="#333333"/>
+            </rectangle>
+            <staticText>
+                <reportElement x="4" y="3" width="60" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Année]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="68" y="3" width="130" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Fraction non exécutée]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="202" y="3" width="190" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Identification du contrat]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="396" y="3" width="115" height="14" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Right"><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Montant total]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="22">
+            <textField isBlankWhenNull="true">
+                <reportElement x="4" y="2" width="60" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{annee}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="68" y="2" width="130" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{fraction}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="202" y="2" width="190" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{contrat}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="396" y="2" width="115" height="16"/>
+                <textElement textAlignment="Right"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{montant}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="21" width="515" height="1" forecolor="#DDDDDD"/>
+            </line>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+
+    <summary>
+        <band height="80">
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="16" width="235" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Fait le " + $P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="54" width="235" height="14"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_NOM}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="68" width="235" height="12"/>
+                <textElement><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_FONCTION}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+
+    <noData>
+        <band height="30">
+            <staticText>
+                <reportElement x="0" y="6" width="515" height="18"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <text><![CDATA[Néant]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>

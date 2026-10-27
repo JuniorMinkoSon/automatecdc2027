@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Planning d'execution des travaux.
+
+  Un diagramme de Gantt sur douze colonnes serait illisible imprime en A4 et
+  inexploitable au-dela de quatre mois de delai. Le planning prend donc la
+  forme d'un tableau : une tache, son mois de debut, sa duree, son mois de fin.
+  La commission verifie une chose - que la derniere tache se termine dans le
+  delai engage - et cette forme la lui donne sans qu'elle ait a compter des
+  cases.
+
+  Le total est calcule : un planning dont la derniere tache depasse le delai
+  engage se voit immediatement, au lieu de se decouvrir a l'execution.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="planning"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="ENTREPRISE_RAISON_SOCIALE" class="java.lang.String"/>
+    <parameter name="ENTREPRISE_RCCM" class="java.lang.String"/>
+    <parameter name="AO_INTITULE" class="java.lang.String"/>
+    <parameter name="LOT_LIBELLE" class="java.lang.String"/>
+    <parameter name="DELAI_MOIS" class="java.lang.Integer"/>
+    <parameter name="DELAI_LETTRES" class="java.lang.String"/>
+    <parameter name="DATE_LETTRES" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_NOM" class="java.lang.String"/>
+    <parameter name="SIGNATAIRE_FONCTION" class="java.lang.String"/>
+
+    <field name="tache" class="java.lang.String"/>
+    <field name="debutMois" class="java.lang.Integer"/>
+    <field name="dureeMois" class="java.lang.Integer"/>
+
+    <variable name="FIN_MAX" class="java.lang.Integer" calculation="Highest">
+        <variableExpression><![CDATA[
+            ($F{debutMois} == null ? 1 : $F{debutMois})
+            + ($F{dureeMois} == null ? 1 : $F{dureeMois}) - 1
+        ]]></variableExpression>
+    </variable>
+
+    <title>
+        <band height="86">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="22"/>
+                <textElement textAlignment="Center"><font size="14" isBold="true"/></textElement>
+                <text><![CDATA[PLANNING D'EXÉCUTION DES TRAVAUX]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="26" width="515" height="14"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{LOT_LIBELLE}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="42" width="515" height="28"/>
+                <textElement textAlignment="Center"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{AO_INTITULE}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="70" width="515" height="14"/>
+                <textElement textAlignment="Center"><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{DELAI_MOIS} == null ? ""
+                    : "Délai engagé : " + $P{DELAI_LETTRES} + " (" + $P{DELAI_MOIS} + ") mois"]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="22">
+            <rectangle>
+                <reportElement x="0" y="0" width="515" height="20" backcolor="#333333"
+                               forecolor="#333333"/>
+            </rectangle>
+            <staticText>
+                <reportElement x="4" y="3" width="285" height="14" forecolor="#FFFFFF"/>
+                <textElement><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Tâche]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="293" y="3" width="70" height="14" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center"><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Début (mois)]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="367" y="3" width="70" height="14" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center"><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Durée (mois)]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="441" y="3" width="70" height="14" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center"><font size="8" isBold="true"/></textElement>
+                <text><![CDATA[Fin (mois)]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="22">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="4" y="2" width="285" height="16"/>
+                <textElement><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{tache}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="293" y="2" width="70" height="16"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{debutMois}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="367" y="2" width="70" height="16"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[$F{dureeMois}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="441" y="2" width="70" height="16"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA[
+                    ($F{debutMois} == null ? 1 : $F{debutMois})
+                    + ($F{dureeMois} == null ? 1 : $F{dureeMois}) - 1
+                ]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="21" width="515" height="1" forecolor="#DDDDDD"/>
+            </line>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{ENTREPRISE_RAISON_SOCIALE}
+                    + ($P{ENTREPRISE_RCCM} == null || $P{ENTREPRISE_RCCM}.isBlank()
+                       ? "" : " · RCCM " + $P{ENTREPRISE_RCCM})]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+
+    <summary>
+        <band height="110">
+            <!-- Le depassement se voit ici, pas a l'execution. -->
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="8" width="515" height="30"/>
+                <textElement textAlignment="Justified"><font size="9" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[
+                    $V{FIN_MAX} == null ? ""
+                    : ($P{DELAI_MOIS} != null && $V{FIN_MAX} > $P{DELAI_MOIS}
+                       ? "ATTENTION : la dernière tâche s'achève au mois " + $V{FIN_MAX}
+                         + ", au-delà du délai engagé de " + $P{DELAI_MOIS} + " mois."
+                       : "Achèvement au mois " + $V{FIN_MAX}
+                         + ($P{DELAI_MOIS} == null ? "" : ", dans le délai engagé de "
+                            + $P{DELAI_MOIS} + " mois."))
+                ]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="46" width="235" height="16"/>
+                <textElement><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Fait le " + $P{DATE_LETTRES}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="84" width="235" height="14"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_NOM}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="280" y="98" width="235" height="12"/>
+                <textElement><font size="9" isItalic="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{SIGNATAIRE_FONCTION}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+
+    <noData>
+        <band height="40">
+            <staticText>
+                <reportElement x="0" y="10" width="515" height="20"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <text><![CDATA[Aucune tâche planifiée. Ce formulaire ne doit pas partir en l'état.]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>
