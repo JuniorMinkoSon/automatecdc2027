@@ -66,6 +66,20 @@ public class Dossier extends EntiteOrganisation {
     @Column(name = "montant_soumission")
     private Long montantSoumission;
 
+    /**
+     * Declaration du soumissionnaire sur les marches non executes.
+     *
+     * <p>La plateforme ne peut pas la deduire : un marche inexecute ne laisse
+     * pas de trace chez celui qui ne l'a pas execute. C'est donc une
+     * declaration, et le formulaire n'en imprime qu'une des deux - les deux
+     * ensemble laisseraient croire qu'une case a ete cochee par inadvertance.
+     */
+    @Column(name = "sans_antecedent", nullable = false)
+    private boolean sansAntecedent = true;
+
+    @Column(name = "antecedents_detail")
+    private String antecedentsDetail;
+
     @Column(name = "auteur_id", columnDefinition = "uuid")
     private UUID auteurId;
 

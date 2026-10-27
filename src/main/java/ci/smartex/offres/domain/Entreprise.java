@@ -51,6 +51,12 @@ public class Entreprise extends EntiteOrganisation {
     @Column(name = "pied_de_page")
     private String piedDePage;
 
+    /** Exiges par le formulaire de renseignements du bailleur. */
+    @Column(name = "annee_enregistrement")
+    private Integer anneeEnregistrement;
+
+    private String pays;
+
     @Column(name = "maj_le", nullable = false)
     private Instant majLe = Instant.now();
 

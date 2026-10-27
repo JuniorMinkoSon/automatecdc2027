@@ -3,10 +3,12 @@ package ci.smartex.offres.rendu;
 import ci.smartex.offres.domain.AppelOffres;
 import ci.smartex.offres.domain.Entreprise;
 import ci.smartex.offres.domain.Lot;
+import ci.smartex.offres.domain.DonneeDpao;
 import ci.smartex.offres.domain.SectionDao;
 import ci.smartex.offres.repo.DepotAppelOffres;
 import ci.smartex.offres.repo.DepotEntreprise;
 import ci.smartex.offres.repo.DepotLot;
+import ci.smartex.offres.repo.DepotDonneeDpao;
 import ci.smartex.offres.repo.DepotSectionDao;
 import ci.smartex.offres.securite.ContexteOrganisation;
 import org.springframework.stereotype.Service;
@@ -63,6 +65,7 @@ public class ServiceDossierAppelOffres {
     private final DepotLot depotLot;
     private final DepotSectionDao depotSection;
     private final DepotEntreprise depotEntreprise;
+    private final DepotDonneeDpao depotDpao;
 
     public ServiceDossierAppelOffres(ServiceJasper jasper,
                                      AssembleurPdf assembleur,
@@ -70,7 +73,8 @@ public class ServiceDossierAppelOffres {
                                      DepotAppelOffres depotAppelOffres,
                                      DepotLot depotLot,
                                      DepotSectionDao depotSection,
-                                     DepotEntreprise depotEntreprise) {
+                                     DepotEntreprise depotEntreprise,
+                                     DepotDonneeDpao depotDpao) {
         this.jasper = jasper;
         this.assembleur = assembleur;
         this.serviceAvis = serviceAvis;
@@ -78,6 +82,7 @@ public class ServiceDossierAppelOffres {
         this.depotLot = depotLot;
         this.depotSection = depotSection;
         this.depotEntreprise = depotEntreprise;
+        this.depotDpao = depotDpao;
     }
 
     /**
@@ -111,7 +116,36 @@ public class ServiceDossierAppelOffres {
             depotSection.save(section);
         }
 
+        preparerLeDpao(appelOffresId, organisation);
         return depotSection.findAllByAppelOffresIdOrderByOrdreAsc(appelOffresId);
+    }
+
+    /**
+     * Pose les articles du DPAO si besoin. Les valeurs deja saisies ne sont
+     * jamais touchees : relancer la preparation ne doit pas effacer du travail.
+     */
+    @Transactional
+    public List<DonneeDpao> preparerLeDpao(UUID appelOffresId, UUID organisation) {
+        var existants = depotDpao.findAllByAppelOffresIdOrderByOrdreAsc(appelOffresId);
+
+        int ordre = 0;
+        for (CharpenteDpao.Article article : CharpenteDpao.ARTICLES) {
+            ordre++;
+            boolean dejaLa = existants.stream()
+                    .anyMatch(donnee -> donnee.getReferenceIc().equals(article.reference()));
+            if (dejaLa) {
+                continue;
+            }
+            DonneeDpao donnee = new DonneeDpao();
+            donnee.setOrganisationId(organisation);
+            donnee.setAppelOffresId(appelOffresId);
+            donnee.setReferenceIc(article.reference());
+            donnee.setLibelle(article.libelle());
+            donnee.setOrdre(ordre);
+            donnee.setDerivee(article.derivee());
+            depotDpao.save(donnee);
+        }
+        return depotDpao.findAllByAppelOffresIdOrderByOrdreAsc(appelOffresId);
     }
 
     /** Le dossier complet, en un seul PDF. */
@@ -146,7 +180,14 @@ public class ServiceDossierAppelOffres {
             Map<String, Object> parametres = new HashMap<>(commun);
             parametres.put("SECTION_NUMERO", numeroRomain(section.getCode()));
             parametres.put("SECTION_INTITULE", section.getIntitule());
-            parametres.put("SECTION_CONTENU", section.getContenu());
+            // Le DPAO ne vient pas d'une zone de texte : il se compose de ses
+            // articles, dont les valeurs derivees sont recalculees ici. Les
+            // recopier les aurait fait diverger au premier changement.
+            parametres.put("SECTION_CONTENU", "DPAO".equals(section.getCode())
+                    ? CharpenteDpao.texte(
+                            depotDpao.findAllByAppelOffresIdOrderByOrdreAsc(appelOffresId),
+                            appel, lots)
+                    : section.getContenu());
             parametres.put("FIGEE", !section.isModifiable());
             pieces.add(jasper.versPdf("rapports/section_dao.jrxml", parametres, List.of()));
         }

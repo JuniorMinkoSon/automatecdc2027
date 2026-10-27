@@ -55,6 +55,7 @@ public class ServiceGenerationDossier {
     private final DepotAffectationMateriel depotAffectationMateriel;
     private final DepotModele depotModele;
     private final DepotDocumentGenere depotDocumentGenere;
+    private final DepotTachePlanning depotTachePlanning;
 
     public ServiceGenerationDossier(ServiceJasper jasper,
                                     AssembleurPdf assembleur,
@@ -73,7 +74,8 @@ public class ServiceGenerationDossier {
                                     DepotAffectationPersonnel depotAffectationPersonnel,
                                     DepotAffectationMateriel depotAffectationMateriel,
                                     DepotModele depotModele,
-                                    DepotDocumentGenere depotDocumentGenere) {
+                                    DepotDocumentGenere depotDocumentGenere,
+                                    DepotTachePlanning depotTachePlanning) {
         this.jasper = jasper;
         this.assembleur = assembleur;
         this.stockage = stockage;
@@ -92,6 +94,7 @@ public class ServiceGenerationDossier {
         this.depotAffectationMateriel = depotAffectationMateriel;
         this.depotModele = depotModele;
         this.depotDocumentGenere = depotDocumentGenere;
+        this.depotTachePlanning = depotTachePlanning;
     }
 
     /**
@@ -199,6 +202,16 @@ public class ServiceGenerationDossier {
 
             } else if ("MATERIEL".equals(modele.getCode())) {
                 pieces.add(formulaireMateriel(contexte, modele));
+
+            } else if ("RENSEIGNEMENTS".equals(modele.getCode())) {
+                pieces.add(jasper.versPdf(modele.getFichierJrxml(),
+                        parametresRenseignements(contexte), List.of()));
+
+            } else if ("ANTECEDENTS".equals(modele.getCode())) {
+                pieces.add(formulaireAntecedents(contexte, modele));
+
+            } else if ("PLANNING".equals(modele.getCode())) {
+                pieces.add(formulairePlanning(contexte, modele));
             }
         }
 
@@ -347,6 +360,55 @@ public class ServiceGenerationDossier {
                             engin.getAnnee() == null ? "" : String.valueOf(engin.getAnnee()),
                             engin.getProvenance().name().toLowerCase());
                 })
+                .toList();
+
+        return jasper.versPdf(modele.getFichierJrxml(), parametres, lignes);
+    }
+
+    /** Le formulaire de renseignements, entierement tire de la fiche entreprise. */
+    private Map<String, Object> parametresRenseignements(Contexte contexte) {
+        Map<String, Object> parametres = parametres(contexte);
+        Entreprise entreprise = contexte.entreprise();
+        parametres.put("ENTREPRISE_EMAIL", entreprise.getEmail());
+        parametres.put("ENTREPRISE_REGIME", entreprise.getRegimeFiscal());
+        parametres.put("ENTREPRISE_ANNEE", entreprise.getAnneeEnregistrement() == null
+                ? null : String.valueOf(entreprise.getAnneeEnregistrement()));
+        parametres.put("PAYS", entreprise.getPays());
+        // Le groupement n'est pas modelise : l'absence se declare « Néant »
+        // plutot que de laisser un blanc qui se lit comme un oubli.
+        parametres.put("GROUPEMENT", null);
+        return parametres;
+    }
+
+    /**
+     * Le formulaire des antecedents n'imprime qu'une des deux declarations.
+     * Les deux ensemble laisseraient croire qu'une case a ete cochee par
+     * inadvertance.
+     */
+    private byte[] formulaireAntecedents(Contexte contexte, Modele modele) {
+        Map<String, Object> parametres = parametres(contexte);
+        parametres.put("AUCUN_ANTECEDENT", contexte.dossier().isSansAntecedent());
+        parametres.put("DATE_REFERENCE", null);
+
+        List<LigneAntecedent> lignes = contexte.dossier().isSansAntecedent()
+                ? List.of()
+                : List.of(new LigneAntecedent("", "",
+                        contexte.dossier().getAntecedentsDetail() == null
+                                ? "" : contexte.dossier().getAntecedentsDetail(), ""));
+
+        return jasper.versPdf(modele.getFichierJrxml(), parametres, lignes);
+    }
+
+    private byte[] formulairePlanning(Contexte contexte, Modele modele) {
+        Map<String, Object> parametres = parametres(contexte);
+        Integer delai = contexte.dossier().getDelaiExecutionMois();
+        parametres.put("DELAI_MOIS", delai);
+        parametres.put("DELAI_LETTRES", delai == null
+                ? null : MontantEnLettres.nombre(delai));
+
+        List<LignePlanning> lignes = contexte.taches().stream()
+                .map(tache -> new LignePlanning(tache.getLibelle(),
+                        tache.getDebutMois(), tache.getDureeMois()))
                 .toList();
 
         return jasper.versPdf(modele.getFichierJrxml(), parametres, lignes);
@@ -515,6 +577,7 @@ public class ServiceGenerationDossier {
                 depotMateriel.findAllByOrganisationId(organisation),
                 depotAffectationPersonnel.findAllByDossierId(dossierId),
                 depotAffectationMateriel.findAllByDossierId(dossierId),
+                depotTachePlanning.findAllByDossierIdOrderByOrdreAsc(dossierId),
                 depotLot.findAllByAppelOffresIdOrderByNumeroAsc(appelOffres.getId()).size(),
                 dateReference);
     }
@@ -532,6 +595,7 @@ public class ServiceGenerationDossier {
                             List<Materiel> materiel,
                             List<AffectationPersonnel> affectationsPersonnel,
                             List<AffectationMateriel> affectationsMateriel,
+                            List<TachePlanning> taches,
                             int nombreDeLots,
                             LocalDate dateReference) {
 
@@ -617,6 +681,43 @@ public class ServiceGenerationDossier {
 
         public String getValeur4() {
             return valeur4;
+        }
+    }
+
+    /** Ce que Jasper lit pour les antecedents. */
+    public record LigneAntecedent(String annee, String fraction, String contrat,
+                                  String montant) {
+
+        public String getAnnee() {
+            return annee;
+        }
+
+        public String getFraction() {
+            return fraction;
+        }
+
+        public String getContrat() {
+            return contrat;
+        }
+
+        public String getMontant() {
+            return montant;
+        }
+    }
+
+    /** Ce que Jasper lit pour le planning. */
+    public record LignePlanning(String tache, Integer debutMois, Integer dureeMois) {
+
+        public String getTache() {
+            return tache;
+        }
+
+        public Integer getDebutMois() {
+            return debutMois;
+        }
+
+        public Integer getDureeMois() {
+            return dureeMois;
         }
     }
 
