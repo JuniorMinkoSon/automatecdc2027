@@ -5,11 +5,18 @@
 <!--
   Mise en page commune : barre latérale, bandeau, contenu.
 
+  Le titre et le sous-titre viennent du modèle, pas de l'appel au fragment.
+  Les passer en arguments obligeait à écrire des libellés français entre
+  apostrophes dans une expression Thymeleaf, où l'apostrophe est justement le
+  délimiteur : « Ce qui peut empêcher un dépôt aujourd'hui » devenait
+  inécrivable sans échappement fragile. Les lire ici règle la question une
+  fois pour toutes.
+
   Le menu n'affiche que ce que le rôle de la session autorise. Ce n'est pas la
   protection — celle-ci est côté serveur et dans la base — mais montrer à
   quelqu'un une porte qu'il ne peut pas ouvrir n'aide personne.
 -->
-<head th:fragment="entete(titre)">
+<head th:fragment="entete">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${titre} + ' — Dossiers de réponse'">Dossiers de réponse</title>
@@ -17,7 +24,7 @@
 </head>
 
 <body>
-<div th:fragment="enveloppe(titre, sousTitre, corps)" class="enveloppe">
+<div th:fragment="enveloppe(corps)" class="enveloppe">
 
     <aside class="laterale">
         <div class="marque">Dossiers de réponse</div>
@@ -32,10 +39,6 @@
                th:classappend="${rubrique == 'dossiers'} ? 'actif'">Dossiers</a>
             <a th:href="@{/coffre}"
                th:classappend="${rubrique == 'coffre'} ? 'actif'">Coffre de pièces</a>
-            <a th:href="@{/moyens}"
-               th:classappend="${rubrique == 'moyens'} ? 'actif'"
-               sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
-                Personnel et matériel</a>
             <a th:href="@{/modeles}"
                th:classappend="${rubrique == 'modeles'} ? 'actif'"
                sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
@@ -54,7 +57,7 @@
                       th:text="${roleActif}">Rôle</span>
             </div>
             <div>
-                <span th:text="${#authentication.principal.nomComplet}">Utilisateur</span>
+                <span sec:authentication="principal.nomComplet">Utilisateur</span>
                 <form th:action="@{/deconnexion}" method="post" style="display:inline">
                     <button class="bouton secondaire" type="submit">Se déconnecter</button>
                 </form>

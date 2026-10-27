@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
-<head th:replace="~{fragments/mise-en-page :: entete('Administration')}"></head>
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
 <body>
-<div th:replace="~{fragments/mise-en-page :: enveloppe(
-        'Administration de la plateforme',
-        'Les comptes et les paiements. Jamais les dossiers des clients.',
-        ~{::corps})}">
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
 <div th:fragment="corps" th:remove="tag">
 
     <div class="message information">

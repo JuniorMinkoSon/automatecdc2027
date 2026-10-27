@@ -73,6 +73,8 @@ public class ControleurAppelOffres {
     @GetMapping
     public String liste(Model modele) {
         modele.addAttribute("rubrique", "appels");
+        modele.addAttribute("titre", "Appels d'offres");
+        modele.addAttribute("sousTitre", "Les marchés auxquels vous répondez.");
         modele.addAttribute("appels", depotAppelOffres.findAllByOrganisationIdOrderByCreeLeDesc(
                 ContexteOrganisation.exigerOrganisation()));
         return "ao/liste";
@@ -81,6 +83,9 @@ public class ControleurAppelOffres {
     @GetMapping("/nouveau")
     public String formulaire(Model modele) {
         modele.addAttribute("rubrique", "appels");
+        modele.addAttribute("titre", "Nouvel appel d'offres");
+        modele.addAttribute("sousTitre",
+                "Déposez le DAO. Son analyse démarre seule et vous rendez la main.");
         return "ao/nouveau";
     }
 
@@ -140,6 +145,10 @@ public class ControleurAppelOffres {
                 () -> new IllegalArgumentException("Appel d'offres inconnu."));
 
         modele.addAttribute("rubrique", "appels");
+        modele.addAttribute("titre", appel.getIntitule());
+        modele.addAttribute("sousTitre",
+                "Relisez les champs extraits à côté de leur source avant de produire "
+                        + "des pièces.");
         modele.addAttribute("appel", appel);
         modele.addAttribute("lots", depotLot.findAllByAppelOffresIdOrderByNumeroAsc(id));
         modele.addAttribute("exigences", depotExigence.findAllByAppelOffresId(id));

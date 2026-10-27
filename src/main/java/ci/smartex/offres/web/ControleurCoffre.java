@@ -53,6 +53,10 @@ public class ControleurCoffre {
     @GetMapping
     public String afficher(Model modele) {
         modele.addAttribute("rubrique", "coffre");
+        modele.addAttribute("titre", "Coffre de pièces");
+        modele.addAttribute("sousTitre",
+                "Déposez une photo ou un PDF. La lecture propose les dates, "
+                        + "vous confirmez.");
         modele.addAttribute("pieces", depot.findAllByOrganisationId(
                 ContexteOrganisation.exigerOrganisation()));
         modele.addAttribute("types", PieceAdmin.Type.values());

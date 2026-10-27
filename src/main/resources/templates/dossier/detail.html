@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="fr">
-<head th:replace="~{fragments/mise-en-page :: entete('Dossier')}"></head>
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
 <body>
-<div th:replace="~{fragments/mise-en-page :: enveloppe(
-        ${appel.intitule},
-        ${lot != null} ? 'Lot ' + ${lot.numero} + ' — ' + ${lot.intitule} : 'Marché non alloti',
-        ~{::corps})}">
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
 <div th:fragment="corps" th:remove="tag">
 
     <div class="carte">

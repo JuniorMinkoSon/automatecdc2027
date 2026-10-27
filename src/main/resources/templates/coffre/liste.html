@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
-<head th:replace="~{fragments/mise-en-page :: entete('Coffre de pièces')}"></head>
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
 <body>
-<div th:replace="~{fragments/mise-en-page :: enveloppe(
-        'Coffre de pièces',
-        'Déposez une photo ou un PDF. La lecture propose les dates, vous confirmez.',
-        ~{::corps})}">
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
 <div th:fragment="corps" th:remove="tag">
 
     <div class="carte">
@@ -43,10 +40,10 @@
             <div class="detail">
                 <span th:if="${piece.numero}" th:text="'N° ' + ${piece.numero} + ' · '"></span>
                 <span th:text="${piece.dateEmission} != null
-                      ? 'émise le ' + ${piece.dateEmission} : 'date d''émission à saisir'"></span>
+                      ? 'émise le ' + ${piece.dateEmission} : 'date démission à saisir'"></span>
                 <span th:text="${piece.dateExpiration} != null
                       ? ' · expire le ' + ${piece.dateExpiration}
-                      : ' · pas de date d''expiration'"></span>
+                      : ' · sans date dexpiration'"></span>
             </div>
 
             <form th:action="@{/coffre/{id}/confirmer(id=${piece.id})}" method="post"

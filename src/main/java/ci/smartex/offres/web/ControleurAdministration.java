@@ -39,6 +39,9 @@ public class ControleurAdministration {
     @GetMapping
     public String afficher(Model modele) {
         modele.addAttribute("rubrique", "administration");
+        modele.addAttribute("titre", "Administration de la plateforme");
+        modele.addAttribute("sousTitre",
+                "Les comptes et les paiements. Jamais les dossiers des clients.");
         modele.addAttribute("demandes", depotDemandes.findAllByOrderByCreeLeDesc());
         modele.addAttribute("organisations", depotOrganisations.findAll());
         modele.addAttribute("paiements",

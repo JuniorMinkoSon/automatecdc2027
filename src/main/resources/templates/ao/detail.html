@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
-<head th:replace="~{fragments/mise-en-page :: entete('Analyse du DAO')}"></head>
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
 <body>
-<div th:replace="~{fragments/mise-en-page :: enveloppe(
-        ${appel.intitule},
-        'Relisez les champs extraits à côté de leur source avant de produire des pièces.',
-        ~{::corps})}">
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
 <div th:fragment="corps" th:remove="tag">
 
     <div th:if="${appel.statut.name() == 'ECHEC_ANALYSE'}" class="message erreur">
@@ -16,7 +13,7 @@
     <div th:if="${appel.statut.name() == 'EN_ANALYSE'}" class="message information">
         L'analyse est en cours. Rechargez la page dans un instant.
     </div>
-    <div th:if="${appel.statut.name() == 'A_VERIFIER' and appel.erreurAnalyse}"
+    <div th:if="${appel.statut.name() == 'A_VERIFIER' and appel.erreurAnalyse != null}"
          class="message erreur">
         Points d'attention relevés dans le DAO :
         <span th:text="${appel.erreurAnalyse}"></span>

@@ -87,6 +87,9 @@ public class ControleurTableauDeBord {
                 .count();
 
         modele.addAttribute("rubrique", "tableau");
+        modele.addAttribute("titre", "Tableau de bord");
+        modele.addAttribute("sousTitre",
+                "Ce qui peut empêcher un dépôt aujourd'hui.");
         modele.addAttribute("dossiers", lignes);
         modele.addAttribute("piecesARenouveler", aRenouveler);
         modele.addAttribute("nbDossiers", lignes.size());

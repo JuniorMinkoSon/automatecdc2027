@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
-<head th:replace="~{fragments/mise-en-page :: entete('Saisie des prix')}"></head>
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
 <body>
-<div th:replace="~{fragments/mise-en-page :: enveloppe(
-        'Saisie des prix',
-        'Seuls les prix unitaires se saisissent. Montants, totaux et lettres sont calculés.',
-        ~{::corps})}">
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
 <div th:fragment="corps" th:remove="tag">
 
     <div th:if="${#lists.isEmpty(lignes)}" class="carte">

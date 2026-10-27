@@ -74,6 +74,8 @@ public class ControleurDossier {
     @GetMapping
     public String liste(Model modele) {
         modele.addAttribute("rubrique", "dossiers");
+        modele.addAttribute("titre", "Dossiers");
+        modele.addAttribute("sousTitre", "Toutes les réponses, en cours et déposées.");
         modele.addAttribute("dossiers", depotDossier.findAllByOrganisationIdOrderByMajLeDesc(
                 ContexteOrganisation.exigerOrganisation()));
         return "dossier/liste";
@@ -114,6 +116,10 @@ public class ControleurDossier {
         List<LigneDqe> lignes = serviceDqe.lignes(id);
         long total = serviceDqe.totalProvisoire(lignes);
 
+        modele.addAttribute("titre", "Saisie des prix");
+        modele.addAttribute("sousTitre",
+                "Seuls les prix unitaires se saisissent. Montants, totaux et lettres "
+                        + "sont calculés.");
         modele.addAttribute("lignes", lignes);
         modele.addAttribute("total", total);
         modele.addAttribute("totalChiffres", MontantEnLettres.chiffres(total));
@@ -293,6 +299,10 @@ public class ControleurDossier {
                 .orElseThrow(() -> new IllegalStateException("Appel d'offres introuvable."));
 
         modele.addAttribute("rubrique", "dossiers");
+        modele.addAttribute("titre", appel.getIntitule());
+        modele.addAttribute("sousTitre", dossier.getLotId() == null
+                ? "Marché non alloti"
+                : "Version " + dossier.getVersion());
         modele.addAttribute("dossier", dossier);
         modele.addAttribute("appel", appel);
         modele.addAttribute("lot", dossier.getLotId() == null

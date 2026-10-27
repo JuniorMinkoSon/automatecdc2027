@@ -57,6 +57,9 @@ public class ControleurModeles {
     @GetMapping
     public String liste(Model modele) {
         modele.addAttribute("rubrique", "modeles");
+        modele.addAttribute("titre", "Modèles de documents");
+        modele.addAttribute("sousTitre",
+                "Vos documents Word, remplis sans perdre leur mise en page.");
         modele.addAttribute("modeles", depot.findAllByActifTrueOrderByOrdreSommaireAsc());
         modele.addAttribute("categories", Modele.Categorie.values());
         modele.addAttribute("offres", Modele.Offre.values());

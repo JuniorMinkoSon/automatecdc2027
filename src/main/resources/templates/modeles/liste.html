@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
-<head th:replace="~{fragments/mise-en-page :: entete('Modèles de documents')}"></head>
+<head th:replace="~{fragments/mise-en-page :: entete}"></head>
 <body>
-<div th:replace="~{fragments/mise-en-page :: enveloppe(
-        'Modèles de documents',
-        'Vos documents Word, remplis automatiquement sans perdre leur mise en page.',
-        ~{::corps})}">
+<div th:replace="~{fragments/mise-en-page :: enveloppe(~{::corps})}">
 <div th:fragment="corps" th:remove="tag">
 
     <div class="carte">
@@ -70,9 +67,7 @@
                 <td data-intitule="Pièce" th:text="${m.libelle}">Pièce</td>
                 <td data-intitule="Format" th:text="${m.format}">—</td>
                 <td data-intitule="Provenance"
-                    th:text="${m.estTeleverse()}
-                             ? 'Votre entreprise'
-                             : 'Livré avec l''application'">—</td>
+                    th:text="${m.estTeleverse()} ? 'Votre entreprise' : 'Livré avec la plateforme'">—</td>
                 <td>
                     <form th:if="${m.estTeleverse()}"
                           th:action="@{/modeles/{id}/retirer(id=${m.id})}" method="post">
