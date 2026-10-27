@@ -103,6 +103,13 @@ croisée impossible entre entreprises, écriture au nom d'une autre refusée,
 absence de contexte qui ne donne rien plutôt que tout, montant recalculé et non
 écrit, journal en ajout seul, compte applicatif sans droit sur la structure.
 
+`ParcoursCompletTest` enchaîne le parcours entier dans l'ordre où l'interface
+appelle les services : appel d'offres saisi, coffre rempli, dossier créé,
+rapprochement, prix, contrôles, génération, archive, validation, version n+1.
+L'extraction par le modèle y est **coupée** : le parcours doit fonctionner sans
+elle, car une plateforme qui ne sait plus produire un dossier parce qu'un
+service distant est indisponible ne vaut rien un jour d'échéance.
+
 ## Les documents
 
 Trois provenances coexistent.
