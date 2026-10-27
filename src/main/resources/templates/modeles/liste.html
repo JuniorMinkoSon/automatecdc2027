@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Modèles de documents')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Modèles de documents',
+        'Vos documents Word, remplis automatiquement sans perdre leur mise en page.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <h2 style="margin-top:0">Comment préparer un modèle</h2>
+        <p>Partez d'un document que vous avez déjà déposé par le passé. Remplacez
+            les informations qui changent d'un marché à l'autre par un champ entre
+            doubles accolades, par exemple
+            <code>{{ENTREPRISE_RAISON_SOCIALE}}</code> ou <code>{{AO_NUMERO}}</code>.</p>
+        <p>Pour un tableau qui se répète, mettez <code>{{#LISTE:personnel}}</code>
+            dans la première cellule de la ligne à répéter, puis les champs de
+            chaque élément : <code>{{nom}}</code>, <code>{{poste}}</code>.</p>
+        <p class="aide">L'application lit les champs du document au moment du
+            dépôt : vous n'avez rien à déclarer ailleurs. Un document illisible
+            est refusé tout de suite, et non le jour où vous générez un dossier
+            sous échéance.</p>
+    </div>
+
+    <div class="carte">
+        <form th:action="@{/modeles/deposer}" method="post" enctype="multipart/form-data">
+            <label for="code">Code</label>
+            <input type="text" id="code" name="code" required
+                   placeholder="DECLARATION_HONNEUR">
+            <p class="aide">Reprenez le code d'un modèle livré pour le remplacer
+                par le vôtre, sans en priver les autres entreprises.</p>
+
+            <label for="libelle">Intitulé affiché au sommaire</label>
+            <input type="text" id="libelle" name="libelle" required>
+
+            <label for="categorie">Catégorie</label>
+            <select id="categorie" name="categorie">
+                <option th:each="c : ${categories}" th:value="${c}" th:text="${c}">—</option>
+            </select>
+
+            <label for="offre">Offre</label>
+            <select id="offre" name="offre">
+                <option th:each="o : ${offres}" th:value="${o}" th:text="${o}">—</option>
+            </select>
+
+            <label for="ordre">Place au sommaire</label>
+            <input type="number" id="ordre" name="ordreSommaire" value="50" min="1">
+
+            <label for="fichier">Fichier .docx</label>
+            <input type="file" id="fichier" name="fichier" required accept=".docx">
+
+            <div class="actions">
+                <button class="bouton" type="submit">Déposer le modèle</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(modeles)}" class="vide">
+            Aucun modèle actif.
+        </div>
+        <table th:unless="${#lists.isEmpty(modeles)}">
+            <thead>
+            <tr><th>Ordre</th><th>Pièce</th><th>Format</th><th>Provenance</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${modeles}">
+                <td data-intitule="Ordre" th:text="${m.ordreSommaire}">1</td>
+                <td data-intitule="Pièce" th:text="${m.libelle}">Pièce</td>
+                <td data-intitule="Format" th:text="${m.format}">—</td>
+                <td data-intitule="Provenance"
+                    th:text="${m.estTeleverse()}
+                             ? 'Votre entreprise'
+                             : 'Livré avec l''application'">—</td>
+                <td>
+                    <form th:if="${m.estTeleverse()}"
+                          th:action="@{/modeles/{id}/retirer(id=${m.id})}" method="post">
+                        <button class="bouton secondaire" type="submit">Retirer</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

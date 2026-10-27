@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Analyse du DAO')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        ${appel.intitule},
+        'Relisez les champs extraits à côté de leur source avant de produire des pièces.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div th:if="${appel.statut.name() == 'ECHEC_ANALYSE'}" class="message erreur">
+        L'analyse automatique a échoué<span th:if="${appel.erreurAnalyse}"
+            th:text="' : ' + ${appel.erreurAnalyse}"></span>.
+        Saisissez les champs à la main ci-dessous, ou relancez l'analyse.
+    </div>
+    <div th:if="${appel.statut.name() == 'EN_ANALYSE'}" class="message information">
+        L'analyse est en cours. Rechargez la page dans un instant.
+    </div>
+    <div th:if="${appel.statut.name() == 'A_VERIFIER' and appel.erreurAnalyse}"
+         class="message erreur">
+        Points d'attention relevés dans le DAO :
+        <span th:text="${appel.erreurAnalyse}"></span>
+    </div>
+    <div th:if="${!#lists.isEmpty(champsManquants)}" class="message erreur">
+        Ces champs apparaîtront en blanc sur toutes les pièces :
+        <span th:text="${#strings.listJoin(champsManquants, ', ')}"></span>.
+    </div>
+
+    <h2>Données extraites du DAO</h2>
+    <div class="carte">
+        <form th:action="@{/appels-offres/{id}/verifier(id=${appel.id})}" method="post">
+
+            <label for="numeroAo">Numéro d'appel d'offres</label>
+            <input type="text" id="numeroAo" name="numeroAo" th:value="${appel.numeroAo}">
+
+            <label for="autoriteContractante">Autorité contractante</label>
+            <input type="text" id="autoriteContractante" name="autoriteContractante"
+                   th:value="${appel.autoriteContractante}">
+
+            <label for="destinataire">Destinataire de la soumission</label>
+            <input type="text" id="destinataire" name="destinataire"
+                   th:value="${appel.destinataire}">
+
+            <label for="validiteOffreJours">Durée de validité de l'offre (jours)</label>
+            <input type="number" id="validiteOffreJours" name="validiteOffreJours"
+                   min="1" th:value="${appel.validiteOffreJours}">
+
+            <label for="dateLimiteDepot">Date limite de dépôt</label>
+            <input type="date" id="dateLimiteDepot" name="dateLimiteDepot">
+            <p class="aide" th:if="${appel.dateLimiteDepot == null}">
+                Vide dans le DAO. Si l'avis la précise, reportez-la ici : c'est
+                elle qui sert de référence aux contrôles de péremption.</p>
+
+            <label for="tvaApplicable">Régime de TVA</label>
+            <select id="tvaApplicable" name="tvaApplicable">
+                <option value="indetermine"
+                        th:selected="${appel.tvaApplicable == null}">
+                    Non tranché par le DAO</option>
+                <option value="oui" th:selected="${appel.tvaApplicable == true}">
+                    TVA applicable</option>
+                <option value="non" th:selected="${appel.tvaApplicable == false}">
+                    TVA non prise en compte (exonération à justifier)</option>
+            </select>
+            <p class="aide">Le régime de prix lu dans le DAO :
+                <strong th:text="${appel.regimePrix} ?: 'non précisé'">—</strong>.
+                Si le DAO exige des prix TTC tout en écartant la TVA, il se
+                contredit : c'est à vous de trancher, pas à la plateforme.</p>
+
+            <div class="actions">
+                <button class="bouton" type="submit">Enregistrer la vérification</button>
+            </div>
+        </form>
+
+        <form th:action="@{/appels-offres/{id}/relancer-analyse(id=${appel.id})}"
+              method="post" style="margin-top:12px">
+            <button class="bouton secondaire" type="submit">Relancer l'analyse</button>
+        </form>
+    </div>
+
+    <h2>Lots</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(lots)}" class="vide">
+            Aucun lot détecté. Le marché n'est peut-être pas alloti.
+            <form th:action="@{/appels-offres/{id}/dossier(id=${appel.id})}" method="post"
+                  style="margin-top:14px">
+                <button class="bouton" type="submit">Créer le dossier</button>
+            </form>
+        </div>
+
+        <table th:unless="${#lists.isEmpty(lots)}">
+            <thead>
+            <tr>
+                <th>N°</th><th>Intitulé</th><th>Localité</th>
+                <th class="nombre">Délai</th><th class="nombre">Garantie</th><th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="lot : ${lots}">
+                <td data-intitule="N°" th:text="${lot.numero}">1</td>
+                <td data-intitule="Intitulé" th:text="${lot.intitule}">Intitulé</td>
+                <td data-intitule="Localité" th:text="${lot.localite} ?: '—'">—</td>
+                <td class="nombre" data-intitule="Délai"
+                    th:text="${lot.delaiMois != null} ? ${lot.delaiMois} + ' mois' : '—'">—</td>
+                <td class="nombre" data-intitule="Garantie"
+                    th:text="${lot.montantGarantie} ?: '—'">—</td>
+                <td>
+                    <form th:action="@{/appels-offres/{id}/dossier(id=${appel.id})}"
+                          method="post">
+                        <input type="hidden" name="lotId" th:value="${lot.id}">
+                        <button class="bouton secondaire" type="submit">Créer le dossier</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Exigences extraites</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(exigences)}" class="vide">
+            Aucune exigence extraite. Vérifiez le DAO : un marché de travaux en
+            comporte presque toujours.
+        </div>
+        <div th:each="exigence : ${exigences}" class="controle">
+            <div class="titre">
+                <span th:text="${exigence.libelle}">Libellé</span>
+                <span class="etat bloquant" th:if="${exigence.eliminatoire}">Éliminatoire</span>
+            </div>
+            <div class="detail">
+                <span th:text="${exigence.type}">Type</span>
+                <span th:if="${exigence.valeur}" th:text="' — ' + ${exigence.valeur}"></span>
+                <span th:if="${exigence.sourceDao}"
+                      th:text="' (' + ${exigence.sourceDao} + ')'"></span>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

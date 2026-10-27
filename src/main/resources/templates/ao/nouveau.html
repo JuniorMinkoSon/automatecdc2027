@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Nouvel appel d''offres')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Nouvel appel d''offres',
+        'Déposez le DAO. Son analyse démarre seule et vous rendez la main tout de suite.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <form th:action="@{/appels-offres/nouveau}" method="post"
+              enctype="multipart/form-data">
+
+            <label for="intitule">Intitulé du marché</label>
+            <input type="text" id="intitule" name="intitule" required
+                   placeholder="Recopiez l'intitulé exactement comme le DAO l'écrit">
+            <p class="aide">Cet intitulé apparaîtra sur toutes les pièces du dossier.
+                Il est saisi une seule fois, ici.</p>
+
+            <label for="dao">Dossier d'appel d'offres</label>
+            <input type="file" id="dao" name="dao" required
+                   accept=".pdf,.doc,.docx,.odt,.rtf">
+            <p class="aide">PDF ou document Word, 64 Mo au maximum. Un document
+                scanné est reconnu automatiquement.</p>
+
+            <div class="actions">
+                <button class="bouton" type="submit">Déposer et analyser</button>
+                <a class="bouton secondaire" th:href="@{/appels-offres}">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="carte">
+        <h2 style="margin-top:0">Ce que l'analyse fait, et ne fait pas</h2>
+        <p>L'analyse lit le DAO et en transcrit les champs : numéro, autorité
+            contractante, lots, délais, garanties, exigences de personnel et de
+            matériel. Elle ne rédige rien et ne décide rien.</p>
+        <p>Les champs extraits passent en <strong>« à vérifier »</strong>. Vous les
+            relisez à côté de leur source, et c'est cette relecture — pas
+            l'extraction — qui autorise la production des pièces.</p>
+        <p class="aide">Si l'analyse échoue, le DAO reste déposé et les champs se
+            saisissent à la main. Rien ne se perd.</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

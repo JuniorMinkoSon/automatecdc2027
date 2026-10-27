@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Dossier')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        ${appel.intitule},
+        ${lot != null} ? 'Lot ' + ${lot.numero} + ' — ' + ${lot.intitule} : 'Marché non alloti',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div>
+                <span class="etat" th:switch="${dossier.statut.name()}"
+                      th:classappend="${dossier.statut.name() == 'BROUILLON'} ? 'brouillon'
+                                    : (${dossier.statut.name() == 'EN_VALIDATION'} ? 'validation'
+                                    : (${dossier.statut.name() == 'VALIDE'} ? 'valide' : 'depose'))">
+                    <span th:case="'BROUILLON'">Brouillon</span>
+                    <span th:case="'EN_VALIDATION'">En validation</span>
+                    <span th:case="'VALIDE'">Validé</span>
+                    <span th:case="'DEPOSE'">Déposé</span>
+                </span>
+                <span th:text="'version ' + ${dossier.version}">version 1</span>
+            </div>
+            <div th:if="${dossier.porteFiligrane()}" class="detail"
+                 style="color:var(--avertissement)">
+                Tant qu'il n'est pas validé, chaque page porte la mention BROUILLON.
+            </div>
+        </div>
+
+        <div th:if="${dossier.commentaireValidation}" class="message erreur"
+             style="margin-top:14px">
+            Commentaire du validateur :
+            <span th:text="${dossier.commentaireValidation}"></span>
+        </div>
+    </div>
+
+    <h2>Contrôles de conformité</h2>
+    <div class="carte">
+        <div th:if="${rapport.nombreExecutes() == 0}" class="vide">
+            Aucun contrôle n'a encore été exécuté sur ce dossier.
+        </div>
+
+        <div th:if="${rapport.nombreExecutes() > 0}">
+            <p>
+                <strong th:text="${rapport.nombreExecutes()}">0</strong> contrôle(s) exécuté(s),
+                <strong th:text="${rapport.nombreBloquants()}"
+                        th:style="${rapport.nombreBloquants() > 0}
+                                  ? 'color:var(--bloquant)' : ''">0</strong> bloquant(s) en échec,
+                <strong th:text="${rapport.nombreAvertissements()}">0</strong> avertissement(s).
+            </p>
+
+            <div th:each="resultat : ${rapport.resultats()}"
+                 th:if="${!resultat.reussi}"
+                 class="controle" th:classappend="${resultat.bloque()} ? 'echec'">
+                <div class="titre">
+                    <span th:text="${resultat.libelle}">Contrôle</span>
+                    <span class="etat"
+                          th:classappend="${resultat.bloque()} ? 'bloquant' : 'brouillon'"
+                          th:text="${resultat.bloque()} ? 'Bloquant' : 'Avertissement'">—</span>
+                </div>
+                <div class="detail" th:text="${resultat.message}">Message</div>
+                <a th:if="${resultat.lienCorrection}"
+                   th:href="${resultat.lienCorrection}">Corriger</a>
+            </div>
+
+            <div th:if="${rapport.validationPossible()}" class="message succes">
+                Aucun contrôle bloquant n'échoue. Le dossier peut partir en validation.
+            </div>
+        </div>
+    </div>
+
+    <h2>Engagements</h2>
+    <div class="carte">
+        <form th:action="@{/dossiers/{id}/engagements(id=${dossier.id})}" method="post">
+            <label for="delai">Délai d'exécution (mois)</label>
+            <input type="number" id="delai" name="delaiExecutionMois" min="1"
+                   th:value="${dossier.delaiExecutionMois}"
+                   th:readonly="${!dossier.estModifiable()}">
+            <p class="aide" th:if="${lot != null and lot.delaiMois != null}"
+               th:text="'Le DAO impose ' + ${lot.delaiMois} + ' mois au maximum pour ce lot.'"></p>
+
+            <label for="validite">Validité de l'offre (jours)</label>
+            <input type="number" id="validite" name="validiteOffreJours" min="1"
+                   th:value="${dossier.validiteOffreJours}"
+                   th:readonly="${!dossier.estModifiable()}">
+
+            <label for="garantie">Validité de la garantie (jours)</label>
+            <input type="number" id="garantie" name="validiteGarantieJours" min="1"
+                   th:value="${dossier.validiteGarantieJours}"
+                   th:readonly="${!dossier.estModifiable()}">
+            <p class="aide">La garantie vaut la validité de l'offre augmentée de
+                trente jours.</p>
+
+            <div class="actions" th:if="${dossier.estModifiable()}">
+                <button class="bouton" type="submit">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Actions</h2>
+    <div class="carte">
+        <div class="actions">
+            <a class="bouton secondaire"
+               th:href="@{/dossiers/{id}/prix(id=${dossier.id})}">Saisir les prix</a>
+
+            <form th:action="@{/dossiers/{id}/rapprochement(id=${dossier.id})}" method="post"
+                  th:if="${dossier.estModifiable()}">
+                <button class="bouton secondaire" type="submit">
+                    Rapprocher personnel et matériel</button>
+            </form>
+
+            <form th:action="@{/dossiers/{id}/generer(id=${dossier.id})}" method="post"
+                  th:if="${dossier.estModifiable()}">
+                <button class="bouton" type="submit">Générer le brouillon</button>
+            </form>
+
+            <form th:action="@{/dossiers/{id}/soumettre(id=${dossier.id})}" method="post"
+                  th:if="${dossier.estModifiable()}">
+                <button class="bouton" type="submit"
+                        th:classappend="${!rapport.validationPossible()} ? 'inactif'"
+                        th:disabled="${!rapport.validationPossible()}">
+                    Soumettre à validation</button>
+            </form>
+
+            <a class="bouton secondaire"
+               th:if="${dossier.statut.name() == 'EN_VALIDATION'}"
+               th:href="@{/dossiers/{id}/validation(id=${dossier.id})}"
+               sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','VALIDATEUR')">
+                Ouvrir la validation</a>
+
+            <form th:action="@{/dossiers/{id}/depose(id=${dossier.id})}" method="post"
+                  th:if="${dossier.statut.name() == 'VALIDE'}">
+                <button class="bouton secondaire" type="submit">Marquer déposé</button>
+            </form>
+
+            <form th:action="@{/dossiers/{id}/nouvelle-version(id=${dossier.id})}" method="post"
+                  th:if="${dossier.statut.estFige()}">
+                <button class="bouton secondaire" type="submit">Créer une version n+1</button>
+            </form>
+        </div>
+        <p class="aide" th:if="${!rapport.validationPossible() and dossier.estModifiable()}">
+            « Soumettre à validation » reste inactif tant qu'un contrôle bloquant échoue.
+        </p>
+    </div>
+
+    <h2>Documents produits</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(documents)}" class="vide">
+            Aucun document généré pour l'instant.
+        </div>
+
+        <table th:unless="${#lists.isEmpty(documents)}">
+            <thead>
+            <tr><th>Pièce</th><th>Version</th><th>État</th><th>Empreinte SHA-256</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="document : ${documents}">
+                <td data-intitule="Pièce" th:text="${document.type}">Type</td>
+                <td data-intitule="Version" th:text="'v' + ${document.version}">v1</td>
+                <td data-intitule="État">
+                    <span class="etat"
+                          th:classappend="${document.brouillon} ? 'brouillon' : 'valide'"
+                          th:text="${document.brouillon} ? 'Brouillon' : 'Définitif'">—</span>
+                </td>
+                <td data-intitule="Empreinte"
+                    style="font-family:monospace;font-size:12px;word-break:break-all"
+                    th:text="${#strings.substring(document.empreinteSha256, 0, 16)} + '…'">—</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="actions" th:unless="${#lists.isEmpty(documents)}">
+            <a class="bouton" th:href="@{/dossiers/{id}/archive(id=${dossier.id})}">
+                Télécharger le dossier (ZIP)</a>
+        </div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

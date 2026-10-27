@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Dossiers')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Dossiers', 'Toutes les réponses, en cours et déposées.', ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(dossiers)}" class="vide">
+            Aucun dossier. Déposez d'abord un appel d'offres.
+        </div>
+        <table th:unless="${#lists.isEmpty(dossiers)}">
+            <thead>
+            <tr><th>Version</th><th>Statut</th><th>Montant figé</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="dossier : ${dossiers}">
+                <td data-intitule="Version" th:text="'v' + ${dossier.version}">v1</td>
+                <td data-intitule="Statut">
+                    <span class="etat"
+                          th:classappend="${dossier.statut.name() == 'BROUILLON'} ? 'brouillon'
+                                        : (${dossier.statut.name() == 'EN_VALIDATION'} ? 'validation'
+                                        : (${dossier.statut.name() == 'VALIDE'} ? 'valide' : 'depose'))"
+                          th:text="${dossier.statut}">Statut</span>
+                </td>
+                <td data-intitule="Montant"
+                    th:text="${dossier.montantSoumission} ?: 'non figé'">—</td>
+                <td><a th:href="@{/dossiers/{id}(id=${dossier.id})}">Ouvrir</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+</body>
+</html>

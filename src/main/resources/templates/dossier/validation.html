@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Validation')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Validation du dossier',
+        'Relisez le rapport, puis validez ou renvoyez en brouillon.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <h2 style="margin-top:0">Rapport de conformité</h2>
+        <p>
+            <strong th:text="${rapport.nombreExecutes()}">0</strong> contrôle(s) exécuté(s),
+            <strong th:text="${rapport.nombreBloquants()}">0</strong> bloquant(s) en échec,
+            <strong th:text="${rapport.nombreAvertissements()}">0</strong> avertissement(s).
+        </p>
+        <div th:each="resultat : ${rapport.resultats()}" class="controle"
+             th:classappend="${!resultat.reussi and resultat.bloque()} ? 'echec'">
+            <div class="titre">
+                <span th:text="${resultat.libelle}">Contrôle</span>
+                <span class="etat"
+                      th:classappend="${resultat.reussi} ? 'valide'
+                                    : (${resultat.bloque()} ? 'bloquant' : 'brouillon')"
+                      th:text="${resultat.reussi} ? 'Conforme'
+                             : (${resultat.bloque()} ? 'Bloquant' : 'Avertissement')">—</span>
+            </div>
+            <div class="detail" th:if="${resultat.message}"
+                 th:text="${resultat.message}">Message</div>
+        </div>
+    </div>
+
+    <div class="carte">
+        <h2 style="margin-top:0">Décision</h2>
+        <p class="aide">
+            La personne qui a modifié ce dossier ne peut pas le valider. Si le bouton
+            vous est refusé, c'est que la relecture revient à quelqu'un d'autre.
+        </p>
+
+        <form th:action="@{/dossiers/{id}/validation/valider(id=${dossier.id})}" method="post">
+            <label for="commentaire">Commentaire</label>
+            <textarea id="commentaire" name="commentaire" rows="3"></textarea>
+            <div class="actions">
+                <button class="bouton" type="submit"
+                        th:classappend="${!rapport.validationPossible()} ? 'inactif'"
+                        th:disabled="${!rapport.validationPossible()}">
+                    Valider et verrouiller</button>
+            </div>
+        </form>
+
+        <form th:action="@{/dossiers/{id}/validation/renvoyer(id=${dossier.id})}"
+              method="post" style="margin-top:20px">
+            <label for="motif">Motif du renvoi (obligatoire)</label>
+            <textarea id="motif" name="commentaire" rows="3" required></textarea>
+            <p class="aide">Un renvoi sans motif n'apprend rien au rédacteur.</p>
+            <div class="actions">
+                <button class="bouton secondaire" type="submit">Renvoyer en brouillon</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

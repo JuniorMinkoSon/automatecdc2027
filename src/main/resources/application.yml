@@ -76,7 +76,10 @@ org:
       enabled: true
       worker-count: 4
     dashboard:
-      enabled: true
+      # Ferme par defaut : c'est un serveur HTTP distinct, qui n'est pas
+      # derriere le proxy et donc pas derriere l'authentification. L'ouvrir
+      # reviendrait a publier l'etat des traitements sans controle d'acces.
+      enabled: ${APP_TABLEAU_TACHES:false}
       port: 8000
     miscellaneous:
       allow-anonymous-data-usage: false
@@ -89,6 +92,14 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    mail:
+      # Un serveur de courrier injoignable n'est pas une application morte :
+      # les dossiers se preparent, se generent et se telechargent sans lui.
+      # L'y inclure ferait echouer le healthcheck Docker en permanence, et le
+      # conteneur redemarrerait en boucle pour une panne qui n'empeche rien
+      # d'essentiel. L'envoi echoue alors la ou il a lieu, et se journalise.
+      enabled: false
 
 app:
   stockage-racine: ${APP_STOCKAGE_RACINE:./donnees/fichiers}

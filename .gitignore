@@ -35,3 +35,5 @@ logs/
 # Secrets et donnees locales
 .env
 donnees/
+donnees/
+target/

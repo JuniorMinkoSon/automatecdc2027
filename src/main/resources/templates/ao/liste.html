@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Appels d''offres')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Appels d''offres',
+        'Les marchés auxquels vous répondez.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="actions" style="margin:0 0 18px">
+        <a class="bouton" th:href="@{/appels-offres/nouveau}">Déposer un DAO</a>
+    </div>
+
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(appels)}" class="vide">
+            Aucun appel d'offres. Déposez un DAO pour commencer.
+        </div>
+
+        <table th:unless="${#lists.isEmpty(appels)}">
+            <thead>
+            <tr>
+                <th>Intitulé</th>
+                <th>Numéro</th>
+                <th>Autorité contractante</th>
+                <th>État de l'analyse</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="appel : ${appels}">
+                <td data-intitule="Intitulé" th:text="${appel.intitule}">Intitulé</td>
+                <td data-intitule="Numéro"
+                    th:text="${appel.numeroAo} ?: '— à compléter'">Numéro</td>
+                <td data-intitule="Autorité"
+                    th:text="${appel.autoriteContractante} ?: '— à compléter'">Autorité</td>
+                <td data-intitule="Analyse">
+                    <span class="etat"
+                          th:classappend="${appel.statut.name() == 'VERIFIE'} ? 'valide'
+                                        : (${appel.statut.name() == 'ECHEC_ANALYSE'} ? 'bloquant'
+                                        : 'brouillon')"
+                          th:switch="${appel.statut.name()}">
+                        <span th:case="'EN_ANALYSE'">Analyse en cours</span>
+                        <span th:case="'A_VERIFIER'">À vérifier</span>
+                        <span th:case="'VERIFIE'">Vérifié</span>
+                        <span th:case="'ECHEC_ANALYSE'">Analyse échouée</span>
+                        <span th:case="*" th:text="${appel.statut}">—</span>
+                    </span>
+                </td>
+                <td><a th:href="@{/appels-offres/{id}(id=${appel.id})}">Ouvrir</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

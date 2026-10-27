@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Coffre de pièces')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Coffre de pièces',
+        'Déposez une photo ou un PDF. La lecture propose les dates, vous confirmez.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="carte">
+        <form th:action="@{/coffre/deposer}" method="post" enctype="multipart/form-data">
+            <label for="type">Type de pièce</label>
+            <select id="type" name="type" required>
+                <option th:each="t : ${types}" th:value="${t}" th:text="${t}">Type</option>
+            </select>
+            <label for="fichier">Fichier</label>
+            <input type="file" id="fichier" name="fichier" required
+                   accept=".pdf,.jpg,.jpeg,.png,.tif,.tiff">
+            <p class="aide">PDF ou photo, 32 Mo au maximum.</p>
+            <div class="actions">
+                <button class="bouton" type="submit">Déposer la pièce</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(pieces)}" class="vide">
+            Le coffre est vide. Les pièces administratives y sont déposées une fois
+            et réutilisées dans tous les dossiers.
+        </div>
+
+        <div th:each="piece : ${pieces}" class="controle">
+            <div class="titre">
+                <span th:text="${piece.type}">Type</span>
+                <span class="etat"
+                      th:if="${!piece.confirmee}" >À confirmer</span>
+                <span class="etat bloquant"
+                      th:if="${piece.confirmee and piece.expireAvant(aujourdhui)}">Expirée</span>
+                <span class="etat valide"
+                      th:if="${piece.confirmee and !piece.expireAvant(aujourdhui)}">Valide</span>
+            </div>
+            <div class="detail">
+                <span th:if="${piece.numero}" th:text="'N° ' + ${piece.numero} + ' · '"></span>
+                <span th:text="${piece.dateEmission} != null
+                      ? 'émise le ' + ${piece.dateEmission} : 'date d''émission à saisir'"></span>
+                <span th:text="${piece.dateExpiration} != null
+                      ? ' · expire le ' + ${piece.dateExpiration}
+                      : ' · pas de date d''expiration'"></span>
+            </div>
+
+            <form th:action="@{/coffre/{id}/confirmer(id=${piece.id})}" method="post"
+                  style="margin-top:10px">
+                <label>Numéro</label>
+                <input type="text" name="numero" th:value="${piece.numero}">
+                <label>Date d'émission</label>
+                <input type="date" name="dateEmission" th:value="${piece.dateEmission}">
+                <label>Date d'expiration</label>
+                <input type="date" name="dateExpiration" th:value="${piece.dateExpiration}">
+                <p class="aide">Laissez vide si la pièce n'en porte pas. Ne la
+                    déduisez pas : une date inventée passerait les contrôles.</p>
+                <div th:if="${piece.type.name() == 'CAUTIONNEMENT'}">
+                    <label>Montant porté par la caution (F CFA)</label>
+                    <input type="number" name="montant" min="0" th:value="${piece.montant}">
+                </div>
+                <div class="actions">
+                    <button class="bouton secondaire" type="submit">
+                        Confirmer la lecture</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

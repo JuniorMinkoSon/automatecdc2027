@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Saisie des prix')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Saisie des prix',
+        'Seuls les prix unitaires se saisissent. Montants, totaux et lettres sont calculés.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div th:if="${#lists.isEmpty(lignes)}" class="carte">
+        <div class="vide">
+            Aucune ligne de bordereau n'a été extraite du DAO.
+            <p class="aide">Le détail quantitatif doit venir du dossier d'appel
+                d'offres : le saisir à la main risquerait de produire un bordereau
+                qui ne correspond plus à celui du marché.</p>
+            <div class="actions" style="justify-content:center">
+                <a class="bouton secondaire"
+                   th:href="@{/appels-offres/{id}(id=${appel.id})}">
+                    Revoir l'analyse du DAO</a>
+            </div>
+        </div>
+    </div>
+
+    <form th:unless="${#lists.isEmpty(lignes)}"
+          th:action="@{/dossiers/{id}/prix(id=${dossier.id})}" method="post">
+
+        <div class="carte">
+            <table>
+                <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Désignation</th>
+                    <th>Unité</th>
+                    <th class="nombre">Quantité</th>
+                    <th class="nombre">Prix unitaire</th>
+                    <th class="nombre">Montant</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ligne : ${lignes}">
+                    <td data-intitule="N°" th:text="${ligne.numeroPrix}">0</td>
+                    <td data-intitule="Désignation">
+                        <span th:text="${ligne.designation}">Désignation</span>
+                        <span class="etat bloquant" th:if="${ligne.designationManquante()}">
+                            Désignation absente du DAO</span>
+                    </td>
+                    <td data-intitule="Unité" th:text="${ligne.unite}">m3</td>
+                    <td class="nombre" data-intitule="Quantité"
+                        th:text="${#numbers.formatDecimal(ligne.quantite, 1, 'DEFAULT', 3, 'DEFAULT')}">
+                        0</td>
+                    <td class="nombre" data-intitule="Prix unitaire">
+                        <input type="number" min="0" step="1" style="max-width:130px"
+                               th:name="'prix_' + ${ligne.id}"
+                               th:value="${ligne.prixUnitaire}"
+                               th:readonly="${!dossier.estModifiable()}">
+                    </td>
+                    <td class="nombre" data-intitule="Montant"
+                        th:text="${ligne.montant != null}
+                                 ? ${#numbers.formatInteger(ligne.montant, 1, 'WHITESPACE')}
+                                 : '—'">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="carte">
+            <div th:if="${prixManquants > 0}" class="message erreur">
+                <span th:text="${prixManquants}">0</span> prix unitaire(s) non saisi(s).
+                Tant qu'il en manque un, aucun montant n'est figé : une lettre de
+                soumission portant un total partiel serait pire qu'une lettre absente.
+            </div>
+
+            <table>
+                <tbody>
+                <tr>
+                    <td><strong>Total provisoire</strong></td>
+                    <td class="nombre"><strong th:text="${totalChiffres}">0 F CFA</strong></td>
+                </tr>
+                <tr>
+                    <td>En toutes lettres</td>
+                    <td class="nombre" th:text="${totalLettres}">—</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="aide">Les deux écritures sortent du même nombre, par la même
+                fonction. C'est ce qui rend impossible l'écart entre chiffres et
+                lettres que la commission sanctionne.</p>
+
+            <div class="actions" th:if="${dossier.estModifiable()}">
+                <button class="bouton" type="submit">Enregistrer les prix</button>
+                <a class="bouton secondaire"
+                   th:href="@{/dossiers/{id}(id=${dossier.id})}">Revenir au dossier</a>
+            </div>
+            <div class="actions" th:unless="${dossier.estModifiable()}">
+                <a class="bouton secondaire"
+                   th:href="@{/dossiers/{id}(id=${dossier.id})}">Revenir au dossier</a>
+            </div>
+        </div>
+    </form>
+
+</div>
+</div>
+</body>
+</html>

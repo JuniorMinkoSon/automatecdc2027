@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="fr">
+<!--
+  Mise en page commune : barre latérale, bandeau, contenu.
+
+  Le menu n'affiche que ce que le rôle de la session autorise. Ce n'est pas la
+  protection — celle-ci est côté serveur et dans la base — mais montrer à
+  quelqu'un une porte qu'il ne peut pas ouvrir n'aide personne.
+-->
+<head th:fragment="entete(titre)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titre} + ' — Dossiers de réponse'">Dossiers de réponse</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+<div th:fragment="enveloppe(titre, sousTitre, corps)" class="enveloppe">
+
+    <aside class="laterale">
+        <div class="marque">Dossiers de réponse</div>
+        <nav>
+            <a th:href="@{/tableau-de-bord}"
+               th:classappend="${rubrique == 'tableau'} ? 'actif'">Tableau de bord</a>
+            <a th:href="@{/appels-offres}"
+               th:classappend="${rubrique == 'appels'} ? 'actif'"
+               sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
+                Appels d'offres</a>
+            <a th:href="@{/dossiers}"
+               th:classappend="${rubrique == 'dossiers'} ? 'actif'">Dossiers</a>
+            <a th:href="@{/coffre}"
+               th:classappend="${rubrique == 'coffre'} ? 'actif'">Coffre de pièces</a>
+            <a th:href="@{/moyens}"
+               th:classappend="${rubrique == 'moyens'} ? 'actif'"
+               sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
+                Personnel et matériel</a>
+            <a th:href="@{/modeles}"
+               th:classappend="${rubrique == 'modeles'} ? 'actif'"
+               sec:authorize="hasAnyRole('ADMIN_ENTREPRISE','REDACTEUR','OPERATEUR_MANDATE')">
+                Modèles de documents</a>
+            <a th:href="@{/administration}"
+               th:classappend="${rubrique == 'administration'} ? 'actif'"
+               sec:authorize="hasRole('SUPER_ADMIN')">Administration</a>
+        </nav>
+    </aside>
+
+    <div class="principal">
+        <header class="bandeau">
+            <div>
+                <strong th:text="${nomEntreprise} ?: 'Plateforme'">Entreprise</strong>
+                <span th:if="${roleActif}" class="etat validation"
+                      th:text="${roleActif}">Rôle</span>
+            </div>
+            <div>
+                <span th:text="${#authentication.principal.nomComplet}">Utilisateur</span>
+                <form th:action="@{/deconnexion}" method="post" style="display:inline">
+                    <button class="bouton secondaire" type="submit">Se déconnecter</button>
+                </form>
+            </div>
+        </header>
+
+        <main class="contenu">
+            <h1 th:text="${titre}">Titre</h1>
+            <p class="sous-titre" th:if="${sousTitre}" th:text="${sousTitre}">Sous-titre</p>
+
+            <div th:if="${message}" class="message succes" th:text="${message}"></div>
+            <div th:if="${erreur}" class="message erreur" th:text="${erreur}"></div>
+
+            <div th:replace="${corps}">Contenu</div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

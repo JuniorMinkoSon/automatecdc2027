@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="~{fragments/mise-en-page :: entete('Administration')}"></head>
+<body>
+<div th:replace="~{fragments/mise-en-page :: enveloppe(
+        'Administration de la plateforme',
+        'Les comptes et les paiements. Jamais les dossiers des clients.',
+        ~{::corps})}">
+<div th:fragment="corps" th:remove="tag">
+
+    <div class="message information">
+        Cet écran ne donne accès à aucun dossier. Ce n'est pas une règle
+        d'affichage : aucune politique de la base n'ouvre les tables de dossiers
+        au super-administrateur, donc une requête qui essaierait ne renverrait rien.
+    </div>
+
+    <h2>Demandes d'inscription</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(demandes)}" class="vide">
+            Aucune demande en attente.
+        </div>
+        <table th:unless="${#lists.isEmpty(demandes)}">
+            <thead>
+            <tr><th>Entreprise</th><th>RCCM</th><th>Contact</th><th>Mode</th><th>Statut</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="demande : ${demandes}">
+                <td data-intitule="Entreprise" th:text="${demande.raisonSociale}">—</td>
+                <td data-intitule="RCCM" th:text="${demande.rccm}">—</td>
+                <td data-intitule="Contact" th:text="${demande.contactEmail}">—</td>
+                <td data-intitule="Mode" th:text="${demande.mode}">—</td>
+                <td data-intitule="Statut">
+                    <span class="etat brouillon" th:text="${demande.statut}">—</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Entreprises</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(organisations)}" class="vide">
+            Aucune entreprise active.
+        </div>
+        <table th:unless="${#lists.isEmpty(organisations)}">
+            <thead>
+            <tr><th>Nom</th><th>Mode</th><th>Statut</th><th class="nombre">Quota dossiers</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="organisation : ${organisations}">
+                <td data-intitule="Nom" th:text="${organisation.nom}">—</td>
+                <td data-intitule="Mode" th:text="${organisation.mode}">—</td>
+                <td data-intitule="Statut">
+                    <span class="etat"
+                          th:classappend="${organisation.statut.name() == 'ACTIVE'} ? 'valide'
+                                        : (${organisation.statut.name() == 'LECTURE_SEULE'}
+                                           ? 'brouillon' : 'depose')"
+                          th:text="${organisation.statut}">—</span>
+                </td>
+                <td class="nombre" data-intitule="Quota"
+                    th:text="${organisation.quotaDossiers}">0</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Paiements confirmés</h2>
+    <div class="carte">
+        <div th:if="${#lists.isEmpty(paiements)}" class="vide">
+            Aucun paiement confirmé.
+            <p class="aide">Aucune transaction n'est affichée comme réussie sans
+                confirmation vérifiable du fournisseur.</p>
+        </div>
+        <table th:unless="${#lists.isEmpty(paiements)}">
+            <thead>
+            <tr><th>Référence</th><th>Moyen</th><th class="nombre">Montant</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="paiement : ${paiements}">
+                <td data-intitule="Référence" th:text="${paiement.reference}">—</td>
+                <td data-intitule="Moyen" th:text="${paiement.moyen}">—</td>
+                <td class="nombre" data-intitule="Montant"
+                    th:text="${#numbers.formatInteger(paiement.montant, 1, 'WHITESPACE')}">0</td>
+                <td data-intitule="Date" th:text="${paiement.confirmeLe}">—</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connexion — Dossiers de réponse</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page-connexion">
+    <div class="carte">
+        <h1>Connexion</h1>
+        <p class="sous-titre">Plateforme de préparation des dossiers de réponse
+            aux appels d'offres.</p>
+
+        <!--
+          Le message d'erreur est volontairement le même pour un compte
+          inconnu, un mot de passe faux et un code à usage unique invalide.
+          Distinguer les trois confirmerait à qui teste qu'il a trouvé la
+          bonne adresse, ou le bon mot de passe.
+        -->
+        <div th:if="${param.erreur}" class="message erreur">
+            Identifiants invalides.
+        </div>
+        <div th:if="${param.deconnecte}" class="message information">
+            Vous êtes déconnecté.
+        </div>
+        <div th:if="${param.motDePasseChoisi}" class="message succes">
+            Mot de passe enregistré. Vous pouvez vous connecter.
+        </div>
+
+        <form th:action="@{/connexion}" method="post">
+            <label for="email">Adresse électronique</label>
+            <input type="email" id="email" name="email" required autofocus
+                   autocomplete="username">
+
+            <label for="motDePasse">Mot de passe</label>
+            <input type="password" id="motDePasse" name="motDePasse" required
+                   autocomplete="current-password">
+
+            <label for="code">Code à usage unique</label>
+            <input type="text" id="code" name="code" inputmode="numeric"
+                   autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6">
+            <p class="aide">Six chiffres, affichés par votre application
+                d'authentification. À laisser vide si votre compte n'en demande pas.</p>
+
+            <div class="actions">
+                <button class="bouton" type="submit">Se connecter</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
