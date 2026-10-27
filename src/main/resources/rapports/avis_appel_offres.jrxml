@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Avis d'appel d'offres.
+
+  C'est le document public : celui que les candidats lisent avant tout autre, et
+  celui sur lequel ils regleront leur offre. Les durees et les montants qu'il
+  annonce viennent des memes champs que le reglement, de sorte qu'il ne peut
+  plus les contredire. L'avis de reference annoncait « cinq cent cinquante
+  mille (850 000) francs CFA » et soixante jours de validite la ou le reglement
+  en exigeait cent vingt ; ces deux ecarts sont devenus impossibles.
+
+  Les clauses numerotees sont composees en Java, sous Git, et arrivent ici en
+  un seul parametre : ce sont des textes reglementaires, ils se relisent en
+  revue de code et non dans un editeur de gabarit.
+-->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                                  http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="avis_appel_offres"
+              pageWidth="595" pageHeight="842"
+              columnWidth="515"
+              leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+
+    <parameter name="MINISTERE" class="java.lang.String"/>
+    <parameter name="REGION" class="java.lang.String"/>
+    <parameter name="AUTORITE" class="java.lang.String"/>
+
+    <parameter name="NUMERO_AVIS" class="java.lang.String"/>
+    <parameter name="OBJET" class="java.lang.String"/>
+    <parameter name="FINANCEMENT" class="java.lang.String"/>
+    <parameter name="LIGNE_BUDGETAIRE" class="java.lang.String"/>
+    <parameter name="CLAUSES" class="java.lang.String"/>
+
+    <field name="numero" class="java.lang.String"/>
+    <field name="designation" class="java.lang.String"/>
+    <field name="delai" class="java.lang.String"/>
+
+    <title>
+        <band height="200">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="0" width="250" height="56"/>
+                <textElement textAlignment="Center"><font size="9" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[
+                    ($P{MINISTERE} == null || $P{MINISTERE}.isBlank() ? "" : $P{MINISTERE} + "\n")
+                    + "------------------------------\n"
+                    + ($P{REGION} == null || $P{REGION}.isBlank() ? "" : $P{REGION} + "\n")
+                    + ($P{AUTORITE} == null ? "" : $P{AUTORITE})
+                ]]></textFieldExpression>
+            </textField>
+
+            <staticText>
+                <reportElement x="265" y="0" width="250" height="16"/>
+                <textElement textAlignment="Center"><font size="11" isBold="true"/></textElement>
+                <text><![CDATA[RÉPUBLIQUE DE CÔTE D'IVOIRE]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="265" y="16" width="250" height="12"/>
+                <textElement textAlignment="Center"><font size="8"/></textElement>
+                <text><![CDATA[Union - Discipline - Travail]]></text>
+            </staticText>
+
+            <line>
+                <reportElement x="180" y="78" width="155" height="1"/>
+            </line>
+
+            <staticText>
+                <reportElement x="0" y="96" width="515" height="22"/>
+                <textElement textAlignment="Center"><font size="15" isBold="true"/></textElement>
+                <text><![CDATA[AVIS D'APPEL D'OFFRES]]></text>
+            </staticText>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="120" width="515" height="18"/>
+                <textElement textAlignment="Center"><font size="13" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA[$P{NUMERO_AVIS} == null || $P{NUMERO_AVIS}.isBlank()
+                    ? "[numéro à compléter]" : "N° " + $P{NUMERO_AVIS}]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="148" width="515" height="30"/>
+                <textElement textAlignment="Justified"><font size="10"/></textElement>
+                <textFieldExpression><![CDATA["Source de financement : " + $P{FINANCEMENT}
+                    + ($P{LIGNE_BUDGETAIRE} == null || $P{LIGNE_BUDGETAIRE}.isBlank()
+                       ? "" : ", ligne : " + $P{LIGNE_BUDGETAIRE})]]></textFieldExpression>
+            </textField>
+
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="182" width="515" height="16"/>
+                <textElement textAlignment="Justified"><font size="10" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA["Objet : " + $P{OBJET}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="24">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="14"/>
+                <textElement><font size="10" isBold="true"/></textElement>
+                <text><![CDATA[Allotissement]]></text>
+            </staticText>
+            <rectangle>
+                <reportElement x="0" y="16" width="515" height="2" backcolor="#333333"
+                               forecolor="#333333"/>
+            </rectangle>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="30">
+            <textField isBlankWhenNull="true">
+                <reportElement x="2" y="2" width="45" height="24"/>
+                <textElement><font size="9" isBold="true"/></textElement>
+                <textFieldExpression><![CDATA["Lot " + $F{numero}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="50" y="2" width="345" height="24"/>
+                <textElement textAlignment="Justified"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{designation}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="400" y="2" width="115" height="24"/>
+                <textElement textAlignment="Right"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$F{delai}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="29" width="515" height="1" forecolor="#DDDDDD"/>
+            </line>
+        </band>
+    </detail>
+
+
+
+    <pageFooter>
+        <band height="24">
+            <line>
+                <reportElement x="0" y="0" width="515" height="1" forecolor="#AAAAAA"/>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="4" width="430" height="12"/>
+                <textElement><font size="7"/></textElement>
+                <textFieldExpression><![CDATA[$P{AUTORITE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="440" y="4" width="75" height="12"/>
+                <textElement textAlignment="Right"><font size="7"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+    <summary>
+        <band height="520">
+            <textField isBlankWhenNull="true" isStretchWithOverflow="true">
+                <reportElement x="0" y="12" width="515" height="500"/>
+                <textElement textAlignment="Justified"><font size="9"/></textElement>
+                <textFieldExpression><![CDATA[$P{CLAUSES}]]></textFieldExpression>
+            </textField>
+        </band>
+    </summary>
+    <noData>
+        <band height="30">
+            <staticText>
+                <reportElement x="0" y="6" width="515" height="18"/>
+                <textElement textAlignment="Center"><font size="9" isItalic="true"/></textElement>
+                <text><![CDATA[Aucun lot défini. Cet avis ne doit pas être publié en l'état.]]></text>
+            </staticText>
+        </band>
+    </noData>
+</jasperReport>

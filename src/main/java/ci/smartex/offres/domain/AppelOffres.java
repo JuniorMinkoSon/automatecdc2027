@@ -22,6 +22,20 @@ import java.util.UUID;
 @Setter
 public class AppelOffres extends EntiteOrganisation {
 
+    /**
+     * De quel cote du marche on se trouve.
+     *
+     * <p>Le meme objet sert aux deux : l'intitule, les lots, les delais et les
+     * garanties sont les memes, seul change qui les ecrit. Les dupliquer dans
+     * deux tables aurait garanti qu'ils divergent.
+     */
+    public enum Role {
+        /** Marche publie par un tiers, auquel l'organisation repond. */
+        REPONSE,
+        /** Marche que l'organisation publie elle-meme. */
+        PUBLICATION
+    }
+
     public enum Statut {
         EN_ANALYSE,
         /** L'IA a rendu son extraction : elle attend une relecture humaine. */
@@ -29,6 +43,10 @@ public class AppelOffres extends EntiteOrganisation {
         VERIFIE,
         ECHEC_ANALYSE
     }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.REPONSE;
 
     @Column(name = "numero_ao")
     private String numeroAo;
@@ -89,6 +107,68 @@ public class AppelOffres extends EntiteOrganisation {
 
     @Column(name = "cree_le", nullable = false)
     private Instant creeLe = Instant.now();
+
+    // ---------------------------------------------------- cote autorite contractante
+    //
+    // Tous nuls pour un appel d'offres auquel on se contente de repondre.
+
+    /** Imputation budgetaire, annoncee dans l'avis. */
+    @Column(name = "ligne_budgetaire")
+    private String ligneBudgetaire;
+
+    /** Appel d'offres ouvert, restreint, consultation : la forme fixe le reste. */
+    @Column(name = "mode_passation")
+    private String modePassation;
+
+    /** Prix de retrait du dossier, non remboursable. */
+    @Column(name = "prix_dossier")
+    private Long prixDossier;
+
+    @Column(name = "moyen_paiement_dossier")
+    private String moyenPaiementDossier;
+
+    @Column(name = "adresse_retrait")
+    private String adresseRetrait;
+
+    @Column(name = "plateforme_depot")
+    private String plateformeDepot;
+
+    @Column(name = "url_depot")
+    private String urlDepot;
+
+    @Column(name = "ouverture_plis")
+    private Instant ouverturePlis;
+
+    @Column(name = "lieu_ouverture")
+    private String lieuOuverture;
+
+    @Column(name = "contacts")
+    private String contacts;
+
+    @Column(name = "qualifications_exigees")
+    private String qualificationsExigees;
+
+    /**
+     * La duree de validite annoncee dans l'avis.
+     *
+     * <p>Distincte de {@code validiteOffreJours}, qui est celle du reglement.
+     * Quand les deux different, le candidat redige une offre non conforme sans
+     * avoir commis d'erreur : c'est le dossier qui se contredit, et c'est
+     * l'autorite contractante qui doit trancher avant de publier.
+     */
+    @Column(name = "validite_annoncee_jours")
+    private Integer validiteAnnonceeJours;
+
+    /** Redevance de regulation, en pourcentage du montant hors taxes. */
+    @Column(name = "redevance_arcop")
+    private java.math.BigDecimal redevanceArcop;
+
+    @Column(name = "reference_code_marches")
+    private String referenceCodeMarches;
+
+    public boolean estPublie() {
+        return role == Role.PUBLICATION;
+    }
 
     public UUID identifiant() {
         return getId();
