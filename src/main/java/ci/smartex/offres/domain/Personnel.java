@@ -9,7 +9,7 @@ import lombok.Setter;
 /**
  * Le personnel de l'entreprise, rapproche des exigences du DAO.
  *
- * <p>Le DAO de la Bagoue exige un conducteur des travaux (BTS batiment, 5 ans)
+ * <p>Le DAO de reference exige un conducteur des travaux (BTS batiment, 5 ans)
  * et un chef de chantier (BT batiment, 3 ans) par lot, distincts entre lots.
  * Le formulaire PER-1 de l'offre deposee etait vide : le rapprochement
  * automatique et le controle bloquant existent pour cela.

@@ -15,7 +15,7 @@ import java.util.List;
  * dates. Ce n'est pas une facilite : c'est ce qui permet au modele de rendre
  * une chaine vide quand le DAO ne dit rien, au lieu d'inventer un zero. La
  * maquette d'analyse affiche « Vide dans le DAO » pour la date limite du vrai
- * DAO de la Bagoue ; c'est ce cas-la qu'il faut pouvoir representer. La
+ * DAO de reference ; c'est ce cas-la qu'il faut pouvoir representer. La
  * conversion et la validation se font ensuite en Java, ou une valeur
  * illisible devient une alerte et non une donnee fausse.
  */

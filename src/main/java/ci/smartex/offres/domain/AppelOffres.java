@@ -68,7 +68,7 @@ public class AppelOffres extends EntiteOrganisation {
 
     private String financement;
 
-    /** IC 19.1 : 120 jours dans le DAO de la Bagoue. */
+    /** IC 19.1 : 120 jours dans le DAO de reference. */
     @Column(name = "validite_offre_jours")
     private Integer validiteOffreJours;
 

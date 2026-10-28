@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * Personnel cle et materiel : ce que le dossier engage face aux exigences
  * extraites des sections 5 et 6 du DAO.
  *
- * <p>Dans l'offre NCHTP d'aout 2026, le formulaire PER-1 etait vide alors que
+ * <p>Dans le dossier de reference, le formulaire PER-1 etait vide alors que
  * le DAO exigeait un conducteur des travaux et un chef de chantier par lot.
  * Ces deux controles sont la pour que cela ne reparte plus.
  */

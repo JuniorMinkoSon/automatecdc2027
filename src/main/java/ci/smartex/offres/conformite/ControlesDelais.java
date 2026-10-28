@@ -4,7 +4,7 @@ import ci.smartex.offres.domain.ControleResultat.Niveau;
 import org.springframework.stereotype.Component;
 
 /**
- * Les trois engagements de duree du DAO de la Bagoue : delai d'execution
+ * Les trois engagements de duree du DAO de reference : delai d'execution
  * (IC 13.2), validite de l'offre (IC 19.1) et validite de la garantie
  * (IC 20, validite de l'offre augmentee de trente jours).
  *

@@ -51,7 +51,7 @@ class ModelesDesTroisDocumentsTest {
     void separateurDeLot() {
         Map<String, Object> parametres = commun();
         parametres.put("LOT_LIBELLE", "Lot 1");
-        parametres.put("LOT_LOCALITE", "Centre de santé de Sissédougou");
+        parametres.put("LOT_LOCALITE", "Centre de santé de la première localité");
 
         byte[] pdf = jasper.versPdf("rapports/separateur_lot.jrxml", parametres, List.of());
 
@@ -111,8 +111,8 @@ class ModelesDesTroisDocumentsTest {
         parametres.put("ENTREPRISE_RAISON_SOCIALE", "ENTREPRISE DE TEST");
         parametres.put("ENTREPRISE_RCCM", "CI-TEST-2026-B-00001");
         parametres.put("AO_INTITULE", "Travaux de construction de deux centres de santé");
-        parametres.put("AO_NUMERO", "A0026070727726");
-        parametres.put("LOT_LIBELLE", "Lot 1 — Sissédougou");
+        parametres.put("AO_NUMERO", "AO-REFERENCE-001");
+        parametres.put("LOT_LIBELLE", "Lot 1 — première localité");
         return parametres;
     }
 

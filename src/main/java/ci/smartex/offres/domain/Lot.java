@@ -26,7 +26,7 @@ public class Lot extends EntiteOrganisation {
 
     private String localite;
 
-    /** IC 13.2 : 4 mois maximum dans le DAO de la Bagoue. */
+    /** IC 13.2 : 4 mois maximum dans le DAO de reference. */
     @Column(name = "delai_mois")
     private Integer delaiMois;
 

@@ -10,8 +10,8 @@ import java.time.Instant;
  * Fiche du soumissionnaire, saisie une seule fois.
  *
  * <p>C'est la source unique de la raison sociale, du sigle, du RCCM et du pied
- * de page de toutes les pieces. Les offres actuelles ecrivent « NCHTP » sur
- * l'une et « NOUVEAU CHALLENGE HYDRO TP (E.N.C.H.TP) » sur l'autre ; ici les
+ * de page de toutes les pieces. Les offres ecrivent le sigle seul sur
+ * l'une et la raison sociale complète sur l'autre ; ici les
  * deux viennent du meme champ, donc l'ecart est impossible.
  */
 @Entity
@@ -60,7 +60,7 @@ public class Entreprise extends EntiteOrganisation {
     @Column(name = "maj_le", nullable = false)
     private Instant majLe = Instant.now();
 
-    /** Ce qui doit apparaitre en tete des pieces : « NCHTP » si un sigle existe. */
+    /** Ce qui doit apparaitre en tete des pieces : le sigle s'il existe. */
     public String denominationCourte() {
         return (sigle != null && !sigle.isBlank()) ? sigle : raisonSociale;
     }

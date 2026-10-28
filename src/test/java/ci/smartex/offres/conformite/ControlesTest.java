@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Les controles sont des fonctions pures sur un etat fourni : ils se testent
  * donc sans base, sans Spring et sans fichier. Les cas ci-dessous sont ceux
- * releves dans l'offre NCHTP d'aout 2026 et dans le DAO de la Bagoue.
+ * releves dans le dossier de reference et dans son DAO.
  */
 @DisplayName("Controles de conformite")
 class ControlesTest {
@@ -167,7 +167,7 @@ class ControlesTest {
         }
 
         @Test
-        @DisplayName("le total du lot 1 de NCHTP se recompose exactement")
+        @DisplayName("le total du lot 1 du dossier de reference se recompose exactement")
         void totalDuLotUn() {
             var contexte = contexteAvecLignes(
                     ligne("I", "0", "1.000", 16_214_800L),
@@ -281,9 +281,9 @@ class ControlesTest {
         var ao = new AppelOffres();
         ao.setId(UUID.randomUUID());
         ao.setOrganisationId(ORGANISATION);
-        ao.setNumeroAo("A0026070727726");
+        ao.setNumeroAo("AO-REFERENCE-001");
         ao.setIntitule("Construction de centres de sante");
-        ao.setAutoriteContractante("Conseil Regional de la Bagoue");
+        ao.setAutoriteContractante("Conseil Regional");
         ao.setValiditeOffreJours(120);
         ao.setRegimePrix("TTC, fermes et non revisables");
         return ao;
@@ -294,7 +294,7 @@ class ControlesTest {
         lot.setId(UUID.randomUUID());
         lot.setOrganisationId(ORGANISATION);
         lot.setNumero(1);
-        lot.setIntitule("Douasso");
+        lot.setIntitule("Premiere localite");
         lot.setDelaiMois(4);
         lot.setMontantGarantie(850_000L);
         return Optional.of(lot);
@@ -304,8 +304,8 @@ class ControlesTest {
         var entreprise = new Entreprise();
         entreprise.setId(UUID.randomUUID());
         entreprise.setOrganisationId(ORGANISATION);
-        entreprise.setRaisonSociale("NOUVEAU CHALLENGE HYDRO TP");
-        entreprise.setSigle("NCHTP");
+        entreprise.setRaisonSociale("ENTREPRISE DE REFERENCE");
+        entreprise.setSigle("EDR");
         entreprise.setRccm("CI-ABJ-2019-B-12345");
         entreprise.setCompteContribuable("1945678 K");
         return entreprise;

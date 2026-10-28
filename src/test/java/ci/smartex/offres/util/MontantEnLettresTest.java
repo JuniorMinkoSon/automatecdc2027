@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MontantEnLettresTest {
 
     @Test
-    @DisplayName("le total du lot 1 de NCHTP, qui est la reference du jalon")
+    @DisplayName("le total du lot 1 du dossier de reference, qui est le jalon")
     void totalLotUn() {
         assertThat(MontantEnLettres.montant(18_639_665L))
                 .isEqualTo("Dix-huit millions six cent trente-neuf mille "
@@ -29,7 +29,7 @@ class MontantEnLettresTest {
     }
 
     @Test
-    @DisplayName("la garantie exigee par le DAO de la Bagoue")
+    @DisplayName("la garantie exigee par le DAO de reference")
     void garantieOffre() {
         assertThat(MontantEnLettres.montant(850_000L))
                 .isEqualTo("Huit cent cinquante mille francs CFA");

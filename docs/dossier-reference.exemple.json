@@ -1,0 +1,79 @@
+{
+  "_lisez_moi": [
+    "Modele de fichier pour app.dossier-reference.active=true.",
+    "A recopier vers donnees/dossier-reference.json, que Git ignore, puis a remplir",
+    "avec un dossier reel. Ne rien inventer : ce qui manque doit rester manquant,",
+    "ce sont les controles bloquants qui le signaleront.",
+    "Le chemin se change avec app.dossier-reference.fichier."
+  ],
+
+  "organisation": "Nom court de l'organisation",
+
+  "compte": {
+    "courriel": "a.remplir@exemple.ci",
+    "nomComplet": "NOM Prenoms",
+    "motDePasse": "a definir, connu de vous seul"
+  },
+
+  "entreprise": {
+    "raisonSociale": "Raison sociale exacte",
+    "sigle": "SIGLE",
+    "rccm": "Numero d'identification de l'entreprise",
+    "adresse": "Ville, quartier",
+    "boitePostale": "00 BP 0000 Ville 00",
+    "telephones": "00 00 00 00 00",
+    "email": "a.remplir@exemple.ci"
+  },
+
+  "representant": {
+    "nom": "M. NOM Prenoms",
+    "fonction": "Gerant"
+  },
+
+  "appelOffres": {
+    "numeroAo": "Numero de l'appel d'offres",
+    "intitule": "Objet du marche, tel qu'il figure dans l'avis",
+    "autoriteContractante": "Autorite contractante",
+    "maitreOuvrage": "Maitre d'ouvrage",
+    "destinataire": "Destinataire de l'offre",
+    "financement": "Origine des fonds",
+    "validiteOffreJours": 120,
+    "dateLimiteDepot": "2026-08-14T23:59",
+    "erreurAnalyse": "Ce que le dossier ne precise pas et qu'il faudra trancher.",
+    "sourceDao": "Reference du document d'ou viennent les exigences"
+  },
+
+  "lots": [
+    {
+      "numero": 1,
+      "intitule": "Intitule du lot",
+      "localite": "Localite",
+      "delaiMois": 4,
+      "montantGarantie": 850000
+    }
+  ],
+
+  "exigences": [
+    {
+      "type": "PERSONNEL",
+      "libelle": "Conducteur des travaux",
+      "valeur": "Diplome et experience exiges par le dossier",
+      "quantiteMin": null,
+      "anneesMin": 5
+    },
+    {
+      "type": "MATERIEL",
+      "libelle": "Betonniere",
+      "valeur": "Nombre minimum : 01",
+      "quantiteMin": 1,
+      "anneesMin": null
+    },
+    {
+      "type": "PIECE",
+      "libelle": "Cautionnement provisoire",
+      "valeur": null,
+      "quantiteMin": null,
+      "anneesMin": null
+    }
+  ]
+}

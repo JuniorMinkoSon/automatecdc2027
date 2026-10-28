@@ -1,38 +1,59 @@
 package ci.smartex.offres.config;
 
-import ci.smartex.offres.domain.*;
-import ci.smartex.offres.repo.*;
+import ci.smartex.offres.domain.AppelOffres;
+import ci.smartex.offres.domain.Entreprise;
+import ci.smartex.offres.domain.Exigence;
+import ci.smartex.offres.domain.Lot;
+import ci.smartex.offres.domain.Membre;
+import ci.smartex.offres.domain.Organisation;
+import ci.smartex.offres.domain.Representant;
+import ci.smartex.offres.domain.Utilisateur;
+import ci.smartex.offres.repo.DepotAppelOffres;
+import ci.smartex.offres.repo.DepotEntreprise;
+import ci.smartex.offres.repo.DepotExigence;
+import ci.smartex.offres.repo.DepotLot;
+import ci.smartex.offres.repo.DepotMembre;
+import ci.smartex.offres.repo.DepotOrganisation;
+import ci.smartex.offres.repo.DepotRepresentant;
+import ci.smartex.offres.repo.DepotUtilisateur;
 import ci.smartex.offres.securite.ContexteOrganisation;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Charge le dossier de reference fourni : l'appel d'offres A0026070727726 du
- * Conseil regional de la Bagoue, et l'entreprise qui y a repondu.
+ * Charge un dossier de reference dans une organisation neuve, pour travailler
+ * sur un cas reel plutot que sur des donnees inventees.
  *
- * <p>Rien n'est invente ici. Chaque valeur vient du dossier de reponse
- * communique : raison sociale, numero d'identification, adresse, gerant,
- * intitule du marche, delais, validites, garantie, sources de financement,
- * personnel et materiel exiges. Ce qui ne figure pas dans ce dossier n'est pas
- * comble : les dates d'expiration des pieces du coffre, les noms du personnel
- * propose et le parc materiel reel restent vides, parce qu'ils etaient
- * absents - le formulaire PER-1 etait blanc dans l'offre deposee.
+ * <p>Le contenu vient d'un fichier, jamais du code. Une raison sociale, un
+ * registre de commerce, un numero de telephone ou un mot de passe ecrits en
+ * dur partiraient dans Git a la premiere validation, et y resteraient : le
+ * depot deviendrait le document le plus sensible du projet. Le fichier reste
+ * sur la machine qui en a besoin, sous {@code donnees/}, que Git ignore.
  *
- * <p>Ces manques ne sont pas un defaut du jeu de donnees : ce sont eux que les
- * controles bloquants doivent faire apparaitre. Un dossier de demonstration ou
- * tout serait vert ne montrerait rien de ce que la plateforme sert a eviter.
+ * <p>Rien n'est complete d'office. Le coffre, le personnel propose et le parc
+ * materiel restent tels que le fichier les laisse, c'est-a-dire le plus
+ * souvent vides : ces manques ne sont pas un defaut du jeu de donnees, ce sont
+ * eux que les controles bloquants doivent faire apparaitre. Un dossier ou tout
+ * serait vert ne montrerait rien de ce que la plateforme sert a eviter.
  *
- * <p>Ne s'execute que si {@code app.dossier-reference.active} vaut vrai, reglage
- * que docker-compose ne pose jamais.
+ * <p>Ne s'execute que si {@code app.dossier-reference.active} vaut vrai,
+ * reglage que docker-compose ne pose jamais.
  */
 @Component
 @ConditionalOnProperty(name = "app.dossier-reference.active", havingValue = "true")
@@ -41,22 +62,8 @@ public class AmorcageDossierReference implements ApplicationRunner {
     private static final Logger LOG = LoggerFactory.getLogger(AmorcageDossierReference.class);
     private static final ZoneId ABIDJAN = ZoneId.of("Africa/Abidjan");
 
-    /** Le courriel figure dans la fiche de renseignements du dossier de reference. */
-    private static final String COURRIEL = "nchtpsarl@gmail.com";
-
-    /**
-     * Mot de passe pose pour pouvoir se connecter en local. En service reel,
-     * un compte se cree par invitation et son mot de passe n'est connu que de
-     * son titulaire : c'est pour cela que le super-administrateur livre par la
-     * migration n'en a aucun.
-     */
-    private static final String MOT_DE_PASSE = "Bagoue2026!";
-
-    private static final String INTITULE =
-            "TRAVAUX DE CONSTRUCTION D'UNE CLOTURE DE 300 METRES LINEAIRE, D'UNE HAUTEUR "
-            + "DE DEUX (02) METRES + UN INCINERATEUR ET UN BAC A ORDURE DANS DEUX (02) "
-            + "CENTRES DE SANTE DE LA REGION (SISSEDOUGOU ET WORA)";
-
+    private final Path fichier;
+    private final ObjectMapper json;
     private final DepotOrganisation depotOrganisation;
     private final DepotUtilisateur depotUtilisateur;
     private final DepotMembre depotMembre;
@@ -67,15 +74,21 @@ public class AmorcageDossierReference implements ApplicationRunner {
     private final DepotExigence depotExigence;
     private final PasswordEncoder encodeur;
 
-    public AmorcageDossierReference(DepotOrganisation depotOrganisation,
-                                    DepotUtilisateur depotUtilisateur,
-                                    DepotMembre depotMembre,
-                                    DepotEntreprise depotEntreprise,
-                                    DepotRepresentant depotRepresentant,
-                                    DepotAppelOffres depotAppelOffres,
-                                    DepotLot depotLot,
-                                    DepotExigence depotExigence,
-                                    PasswordEncoder encodeur) {
+    public AmorcageDossierReference(
+            @Value("${app.dossier-reference.fichier:./donnees/dossier-reference.json}")
+            String chemin,
+            ObjectMapper json,
+            DepotOrganisation depotOrganisation,
+            DepotUtilisateur depotUtilisateur,
+            DepotMembre depotMembre,
+            DepotEntreprise depotEntreprise,
+            DepotRepresentant depotRepresentant,
+            DepotAppelOffres depotAppelOffres,
+            DepotLot depotLot,
+            DepotExigence depotExigence,
+            PasswordEncoder encodeur) {
+        this.fichier = Path.of(chemin);
+        this.json = json;
         this.depotOrganisation = depotOrganisation;
         this.depotUtilisateur = depotUtilisateur;
         this.depotMembre = depotMembre;
@@ -102,30 +115,74 @@ public class AmorcageDossierReference implements ApplicationRunner {
      */
     @Override
     public void run(ApplicationArguments arguments) {
-        if (depotUtilisateur.findByEmailIgnoreCase(COURRIEL).isPresent()) {
-            annoncer();
+        DossierReference reference = lire();
+        if (reference == null) {
             return;
         }
 
-        UUID organisation = creerOrganisation();
+        String courriel = reference.compte().courriel();
+        if (depotUtilisateur.findByEmailIgnoreCase(courriel).isPresent()) {
+            annoncer(reference);
+            return;
+        }
+
+        UUID organisation = creerOrganisation(reference);
         ContexteOrganisation.poser(organisation);
         try {
-            creerEntreprise(organisation);
-            creerCompte(organisation);
-            UUID appelOffres = creerAppelOffres(organisation);
-            creerLots(organisation, appelOffres);
-            creerExigences(organisation, appelOffres);
+            creerEntreprise(organisation, reference);
+            creerCompte(organisation, reference.compte());
+            UUID appelOffres = creerAppelOffres(organisation, reference.appelOffres());
+            creerLots(organisation, appelOffres, reference.lots());
+            creerExigences(organisation, appelOffres, reference);
         } finally {
             ContexteOrganisation.effacer();
         }
-        annoncer();
+        annoncer(reference);
     }
 
-    private UUID creerOrganisation() {
+    // ------------------------------------------------------------------ lecture
+
+    /**
+     * Rend {@code null} et dit pourquoi plutot que d'empecher le demarrage :
+     * un dossier de reference absent n'est pas une panne de la plateforme, et
+     * l'application sert sans lui.
+     */
+    private DossierReference lire() {
+        if (!Files.isRegularFile(fichier)) {
+            LOG.warn("""
+
+                    Le chargement du dossier de reference est demande, mais le
+                    fichier {} n'existe pas. Rien n'a ete charge : la plateforme
+                    demarre vide. Le modele a recopier est docs/dossier-reference.exemple.json.
+                    """, fichier.toAbsolutePath());
+            return null;
+        }
+        try {
+            DossierReference reference =
+                    json.readValue(Files.readAllBytes(fichier), DossierReference.class);
+            String manque = reference.premierManque();
+            if (manque != null) {
+                LOG.error("Le dossier de reference {} est incomplet : {} manque. "
+                        + "Rien n'a ete charge.", fichier.toAbsolutePath(), manque);
+                return null;
+            }
+            return reference;
+        } catch (IOException erreur) {
+            LOG.error("Le dossier de reference {} n'est pas lisible. Rien n'a ete charge.",
+                    fichier.toAbsolutePath(), erreur);
+            return null;
+        }
+    }
+
+    // ------------------------------------------------------------------ ecriture
+
+    private UUID creerOrganisation(DossierReference reference) {
         ContexteOrganisation.poserSuperAdmin();
         try {
             Organisation organisation = new Organisation();
-            organisation.setNom("NCHTP");
+            organisation.setNom(reference.organisation() == null || reference.organisation().isBlank()
+                    ? reference.entreprise().raisonSociale()
+                    : reference.organisation());
             organisation.setStatut(Organisation.Statut.ACTIVE);
             organisation.setMode(Organisation.Mode.LIBRE_SERVICE);
             return depotOrganisation.save(organisation).getId();
@@ -134,33 +191,37 @@ public class AmorcageDossierReference implements ApplicationRunner {
         }
     }
 
-    /** Tiré du formulaire de renseignements sur le candidat. */
-    private void creerEntreprise(UUID organisation) {
+    private void creerEntreprise(UUID organisation, DossierReference reference) {
+        DossierReference.Entreprise source = reference.entreprise();
         Entreprise entreprise = new Entreprise();
         entreprise.setOrganisationId(organisation);
-        entreprise.setRaisonSociale("NCHTP");
-        entreprise.setSigle("NCHTP");
-        // Numero d'identification de l'entreprise, enregistree en 2025.
-        entreprise.setRccm("CI-BAS-01-2025-B13-00258");
-        entreprise.setAdresse("Grand-Bassam, quartier Impérial");
-        entreprise.setBoitePostale("16 BP 1620 Abidjan 16");
-        entreprise.setTelephones("07 07 95 75 74");
-        entreprise.setEmail(COURRIEL);
+        entreprise.setRaisonSociale(source.raisonSociale());
+        entreprise.setSigle(source.sigle());
+        entreprise.setRccm(source.rccm());
+        entreprise.setAdresse(source.adresse());
+        entreprise.setBoitePostale(source.boitePostale());
+        entreprise.setTelephones(source.telephones());
+        entreprise.setEmail(source.email() == null
+                ? reference.compte().courriel()
+                : source.email());
         depotEntreprise.save(entreprise);
 
-        Representant gerant = new Representant();
-        gerant.setOrganisationId(organisation);
-        gerant.setNom("M. GANA ABDOULAYE");
-        gerant.setFonction("Gérant");
-        gerant.setSignataireDefaut(true);
-        depotRepresentant.save(gerant);
+        if (reference.representant() == null) {
+            return;
+        }
+        Representant signataire = new Representant();
+        signataire.setOrganisationId(organisation);
+        signataire.setNom(reference.representant().nom());
+        signataire.setFonction(reference.representant().fonction());
+        signataire.setSignataireDefaut(true);
+        depotRepresentant.save(signataire);
     }
 
-    private void creerCompte(UUID organisation) {
+    private void creerCompte(UUID organisation, DossierReference.Compte compte) {
         Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setEmail(COURRIEL);
-        utilisateur.setNomComplet("GANA ABDOULAYE");
-        utilisateur.setMotDePasseHash(encodeur.encode(MOT_DE_PASSE));
+        utilisateur.setEmail(compte.courriel());
+        utilisateur.setNomComplet(compte.nomComplet());
+        utilisateur.setMotDePasseHash(encodeur.encode(compte.motDePasse()));
         utilisateur.setActif(true);
         UUID identifiant = depotUtilisateur.save(utilisateur).getId();
 
@@ -171,109 +232,112 @@ public class AmorcageDossierReference implements ApplicationRunner {
         depotMembre.save(membre);
     }
 
-    private UUID creerAppelOffres(UUID organisation) {
+    private UUID creerAppelOffres(UUID organisation, DossierReference.AppelOffres source) {
         AppelOffres appel = new AppelOffres();
         appel.setOrganisationId(organisation);
-        appel.setNumeroAo("A0026070727726");
-        appel.setIntitule(INTITULE);
-        appel.setAutoriteContractante("CONSEIL RÉGIONAL DE LA BAGOUÉ");
-        appel.setMaitreOuvrage("CONSEIL RÉGIONAL DE LA BAGOUÉ");
-        appel.setDestinataire("CONSEIL RÉGIONAL DE LA BAGOUÉ");
-        appel.setFinancement("Fonds propres (20 000 000 F CFA) et Versus Bank (6 250 000 F CFA)");
-        appel.setValiditeOffreJours(120);
-
-        // Le dossier de reference ne precise pas le regime de prix ni le sort
-        // de la TVA : les laisser nuls fait apparaitre l'avertissement, qui
-        // est precisement la question a trancher.
-        appel.setDateLimiteDepot(ZonedDateTime.of(2026, 8, 14, 23, 59, 0, 0, ABIDJAN)
-                .toInstant());
+        appel.setNumeroAo(source.numeroAo());
+        appel.setIntitule(source.intitule());
+        appel.setAutoriteContractante(source.autoriteContractante());
+        appel.setMaitreOuvrage(source.maitreOuvrage());
+        appel.setDestinataire(source.destinataire());
+        appel.setFinancement(source.financement());
+        appel.setValiditeOffreJours(source.validiteOffreJours());
+        appel.setDateLimiteDepot(instant(source.dateLimiteDepot()));
         appel.setStatut(AppelOffres.Statut.A_VERIFIER);
-        appel.setErreurAnalyse("Régime de prix et sort de la TVA non précisés par le "
-                + "dossier de référence : à compléter avant génération.");
+        // Ce que le dossier de reference ne precise pas reste non precise, et
+        // l'avertissement correspondant est la question a trancher.
+        appel.setErreurAnalyse(source.erreurAnalyse());
         return depotAppelOffres.save(appel).getId();
     }
 
-    /** Les deux centres de sante de la region, quatre mois par lot. */
-    private void creerLots(UUID organisation, UUID appelOffres) {
-        String[] localites = {"SISSÉDOUGOU", "WORA"};
-        for (int index = 0; index < localites.length; index++) {
+    private void creerLots(UUID organisation, UUID appelOffres, List<DossierReference.Lot> lots) {
+        if (lots == null) {
+            return;
+        }
+        int rang = 0;
+        for (DossierReference.Lot source : lots) {
+            rang++;
             Lot lot = new Lot();
             lot.setOrganisationId(organisation);
             lot.setAppelOffresId(appelOffres);
-            lot.setNumero(index + 1);
-            lot.setIntitule("Centre de santé de " + localites[index]);
-            lot.setLocalite(localites[index]);
-            lot.setDelaiMois(4);
-            lot.setMontantGarantie(850_000L);
+            lot.setNumero(source.numero() == null ? rang : source.numero());
+            lot.setIntitule(source.intitule());
+            lot.setLocalite(source.localite());
+            lot.setDelaiMois(source.delaiMois());
+            lot.setMontantGarantie(source.montantGarantie());
             depotLot.save(lot);
         }
     }
 
     /**
-     * Personnel et materiel exiges par le dossier d'appel d'offres. Ce sont des
-     * exigences, pas des moyens : le personnel propose et le parc reel de
-     * l'entreprise restent a saisir, et leur absence fera echouer les controles
-     * bloquants - comme elle aurait du le faire sur le formulaire PER-1 laisse
-     * blanc dans l'offre deposee.
+     * Les exigences du dossier d'appel d'offres. Ce sont des exigences, pas
+     * des moyens : le personnel propose et le parc reel de l'entreprise
+     * restent a saisir, et leur absence fera echouer les controles bloquants.
      */
-    private void creerExigences(UUID organisation, UUID appelOffres) {
-        creerExigence(organisation, appelOffres, Exigence.Type.PERSONNEL,
-                "Conducteur des travaux", "BTS bâtiment, 5 ans d'expérience", null, 5);
-        creerExigence(organisation, appelOffres, Exigence.Type.PERSONNEL,
-                "Chef de chantier", "BT bâtiment, 3 ans d'expérience", null, 3);
-
-        creerExigence(organisation, appelOffres, Exigence.Type.MATERIEL,
-                "Bétonnière", "Nombre minimum : 01", 1, null);
-        creerExigence(organisation, appelOffres, Exigence.Type.MATERIEL,
-                "Aiguille vibrante", "Nombre minimum : 01", 1, null);
-        creerExigence(organisation, appelOffres, Exigence.Type.MATERIEL,
-                "Véhicule de liaison", "Nombre minimum : 01", 1, null);
-
-        for (String piece : new String[]{
-                "Cautionnement provisoire", "Registre de commerce",
-                "Déclaration fiscale d'existence", "Attestation PME",
-                "Quitus ARCOP", "Attestation bancaire",
-                "Attestation de préfinancement bancaire"}) {
-            creerExigence(organisation, appelOffres, Exigence.Type.PIECE, piece, null, null, null);
+    private void creerExigences(UUID organisation, UUID appelOffres,
+                                DossierReference reference) {
+        if (reference.exigences() == null) {
+            return;
+        }
+        String source = reference.appelOffres().sourceDao();
+        for (DossierReference.Exigence attendue : reference.exigences()) {
+            Exigence exigence = new Exigence();
+            exigence.setOrganisationId(organisation);
+            exigence.setAppelOffresId(appelOffres);
+            exigence.setType(Exigence.Type.valueOf(attendue.type()));
+            exigence.setLibelle(attendue.libelle());
+            exigence.setValeur(attendue.valeur());
+            exigence.setQuantiteMin(attendue.quantiteMin());
+            exigence.setAnneesMin(attendue.anneesMin());
+            exigence.setEliminatoire(true);
+            exigence.setSourceDao(source);
+            depotExigence.save(exigence);
         }
     }
 
-    private void creerExigence(UUID organisation, UUID appelOffres, Exigence.Type type,
-                               String libelle, String valeur,
-                               Integer quantiteMin, Integer anneesMin) {
-        Exigence exigence = new Exigence();
-        exigence.setOrganisationId(organisation);
-        exigence.setAppelOffresId(appelOffres);
-        exigence.setType(type);
-        exigence.setLibelle(libelle);
-        exigence.setValeur(valeur);
-        exigence.setQuantiteMin(quantiteMin);
-        exigence.setAnneesMin(anneesMin);
-        exigence.setEliminatoire(true);
-        exigence.setSourceDao("Dossier de référence A0026070727726");
-        depotExigence.save(exigence);
+    // ------------------------------------------------------------------ interne
+
+    private java.time.Instant instant(String horodatage) {
+        if (horodatage == null || horodatage.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(horodatage).atZone(ABIDJAN).toInstant();
+        } catch (DateTimeParseException erreur) {
+            LOG.warn("Date limite de depot illisible ({}), attendue au format "
+                    + "2026-08-14T23:59. Elle reste vide, et le controle le dira.",
+                    horodatage);
+            return null;
+        }
     }
 
-    private void annoncer() {
+    /**
+     * Le mot de passe n'est jamais journalise : il est dans le fichier de
+     * celui qui a pose le reglage, et les journaux se recopient, se centralisent
+     * et se lisent a plusieurs.
+     */
+    private void annoncer(DossierReference reference) {
         LOG.warn("""
 
                 ========================================================
-                 DOSSIER DE RÉFÉRENCE CHARGÉ — A0026070727726
+                 DOSSIER DE RÉFÉRENCE CHARGÉ — {}
                 ========================================================
-                 Connexion : {} / {}
+                 Connexion : {}
+                 Mot de passe : celui de compte.motDePasse dans {}
                  Rôle      : administrateur d'entreprise
 
-                 Deux lots sont prêts : Sissédougou et Wora.
-
                  Le coffre, le personnel proposé et le parc matériel
-                 sont VIDES : ils ne figuraient pas dans le dossier
-                 communiqué, et rien n'a été inventé pour les combler.
-                 Les contrôles bloquants vont donc les signaler — c'est
-                 exactement ce qu'ils doivent faire.
+                 sont tels que le fichier les laisse. Rien n'a été
+                 inventé pour les combler : les contrôles bloquants
+                 vont donc signaler ce qui manque — c'est exactement
+                 ce qu'ils doivent faire.
 
                  La validation demandera un second compte : celui qui
                  a préparé un dossier ne peut pas le valider.
                 ========================================================
-                """, COURRIEL, MOT_DE_PASSE);
+                """,
+                reference.appelOffres().numeroAo(),
+                reference.compte().courriel(),
+                fichier.toAbsolutePath());
     }
 }
