@@ -133,8 +133,8 @@ class ServiceJasperTest {
     @DisplayName("le rapport de conformite liste les controles executes")
     void rapportDeConformite() {
         Map<String, Object> parametres = parametresCommuns();
-        parametres.put("PREPARE_PAR", "Rédacteur NCHTP");
-        parametres.put("VALIDE_PAR", "M. GANA ABDOULAYE");
+        parametres.put("PREPARE_PAR", "Rédacteur");
+        parametres.put("VALIDE_PAR", "M. NOM PRÉNOMS");
         parametres.put("NB_EXECUTES", 14);
         parametres.put("NB_BLOQUANTS", 0);
         parametres.put("NB_AVERTISSEMENTS", 1);
@@ -151,6 +151,20 @@ class ServiceJasperTest {
     }
 
     @Test
+    @DisplayName("une map de parametres immuable passe, et n'est pas modifiee")
+    void parametresImmuables() {
+        // Jasper range la map des parametres dans la map elle-meme. Lui donner
+        // directement celle de l'appelant la modifie dans son dos et fait
+        // echouer la generation sur un Map.of, sans message exploitable - le
+        // prechauffage au demarrage est tombe exactement la-dessus.
+        Map<String, Object> fige = Map.of("LOT_LIBELLE", "Lot 1");
+
+        assertThatCode(() -> jasper.versPdf("rapports/separateur_lot.jrxml", fige, List.of()))
+                .doesNotThrowAnyException();
+        assertThat(fige).hasSize(1).containsOnlyKeys("LOT_LIBELLE");
+    }
+
+    @Test
     @DisplayName("un modele inexistant echoue clairement, pas par une page vide")
     void modeleIntrouvable() {
         assertThatCode(() -> jasper.versPdf("rapports/inexistant.jrxml", Map.of(), List.of()))
@@ -160,23 +174,23 @@ class ServiceJasperTest {
 
     private Map<String, Object> parametresCommuns() {
         Map<String, Object> parametres = new HashMap<>();
-        parametres.put("ENTREPRISE_RAISON_SOCIALE", "NOUVEAU CHALLENGE HYDRO TP");
-        parametres.put("ENTREPRISE_SIGLE", "NCHTP");
+        parametres.put("ENTREPRISE_RAISON_SOCIALE", "ENTREPRISE DE RÉFÉRENCE");
+        parametres.put("ENTREPRISE_SIGLE", "EDR");
         parametres.put("ENTREPRISE_RCCM", "CI-ABJ-2019-B-12345");
         parametres.put("ENTREPRISE_CC", "1945678 K");
         parametres.put("ENTREPRISE_ADRESSE", "Abidjan, Cocody");
         parametres.put("ENTREPRISE_BP", "08 BP 1234 Abidjan 08");
         parametres.put("ENTREPRISE_TELEPHONES", "+225 07 00 00 00 00");
         parametres.put("TYPE_OFFRE", "OFFRE TECHNIQUE");
-        parametres.put("AO_NUMERO", "A0026070727726");
+        parametres.put("AO_NUMERO", "AO-REFERENCE-001");
         parametres.put("AO_INTITULE",
-                "Construction de centres de santé dans les localités de Douasso et N'Dara");
-        parametres.put("AO_AUTORITE", "Conseil Régional de la Bagoué");
-        parametres.put("AO_DESTINATAIRE", "Conseil Régional de la Bagoué");
-        parametres.put("LOT_LIBELLE", "Lot 1 — Douasso");
+                "Construction de centres de santé dans deux localités");
+        parametres.put("AO_AUTORITE", "Conseil Régional");
+        parametres.put("AO_DESTINATAIRE", "Conseil Régional");
+        parametres.put("LOT_LIBELLE", "Lot 1 — première localité");
         parametres.put("LIEU", "Abidjan");
         parametres.put("DATE_LETTRES", MontantEnLettres.date(LocalDate.of(2026, 8, 14)));
-        parametres.put("SIGNATAIRE_NOM", "M. GANA ABDOULAYE");
+        parametres.put("SIGNATAIRE_NOM", "M. NOM PRÉNOMS");
         parametres.put("SIGNATAIRE_FONCTION", "Gérant");
         parametres.put("TIMBRE_FISCAL", MontantEnLettres.chiffres(1000L));
         parametres.put("TITRE", "Déclaration sur l'honneur");

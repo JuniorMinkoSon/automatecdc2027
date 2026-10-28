@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,8 +99,16 @@ public class ServiceJasper {
         JRDataSource donnees = new JRBeanCollectionDataSource(
                 lignes == null ? List.of() : lignes);
 
+        // Jasper ecrit dans la map qu'on lui donne : il y range notamment la
+        // map elle-meme sous REPORT_PARAMETERS_MAP. Lui passer directement
+        // celle de l'appelant la modifie dans son dos, et un Map.of immuable
+        // fait echouer la generation sur une UnsupportedOperationException
+        // sans message. On copie, l'appelant reste maitre de la sienne.
+        Map<String, Object> pourJasper = new HashMap<>(
+                parametres == null ? Map.of() : parametres);
+
         try {
-            return JasperFillManager.fillReport(modele, parametres, donnees);
+            return JasperFillManager.fillReport(modele, pourJasper, donnees);
         } catch (JRException erreur) {
             throw new RenduImpossibleException(
                     "Remplissage impossible pour " + cheminJrxml, erreur);

@@ -56,6 +56,19 @@ public class PrechauffageJasper implements ApplicationRunner {
             // Facturation
             "rapports/recu_paiement.jrxml");
 
+    /**
+     * Les modeles du chemin le plus frequente : page de garde, sommaire,
+     * section et lettre. Les remplir couvre l'essentiel du moteur, sans
+     * allonger le demarrage avec les seize.
+     */
+    private static final List<String> CHEMIN_LE_PLUS_CHAUD = List.of(
+            "rapports/page_garde_dao.jrxml",
+            "rapports/sommaire.jrxml",
+            "rapports/section_dao.jrxml",
+            "rapports/avis_appel_offres.jrxml",
+            "rapports/page_garde.jrxml",
+            "rapports/lettre_type.jrxml");
+
     private final ServiceJasper jasper;
     private final AssembleurPdf assembleur;
 
@@ -83,7 +96,7 @@ public class PrechauffageJasper implements ApplicationRunner {
             }
         }
 
-        rechaufferLAssemblage();
+        rechaufferLeRendu();
 
         LOG.info("{} modele(s) de rapport compiles en {} ms. La premiere generation sera "
                         + "aussi rapide que les suivantes.",
@@ -91,22 +104,44 @@ public class PrechauffageJasper implements ApplicationRunner {
     }
 
     /**
-     * Fusionne et filigrane deux pages a blanc.
+     * Rend pour de vrai quelques modeles, puis fusionne et filigrane le
+     * resultat.
      *
-     * <p>PDFBox charge ses classes a la premiere fusion, ce qui coutait cinq
-     * secondes au premier dossier assemble de la journee - toujours a la meme
-     * personne, celle qui ouvre l'application en premier. Le resultat de cette
-     * fusion est jete : seul le chargement comptait.
+     * <p>Compiler ne suffisait pas. Le gros du chargement de JasperReports se
+     * produit au premier remplissage et au premier export, pas a la
+     * compilation, et PDFBox charge les siennes a la premiere fusion : le
+     * premier dossier de la journee coutait encore plusieurs secondes de plus
+     * que les suivants, toujours a la meme personne, celle qui ouvre
+     * l'application en premier. On paie ici ce qu'elle payait la.
+     *
+     * <p>Les modeles sont remplis sans parametres : les zones sortent vides,
+     * ce qui est sans importance puisque le resultat est jete. Seul le chemin
+     * parcouru compte.
      */
-    private void rechaufferLAssemblage() {
+    private void rechaufferLeRendu() {
+        List<byte[]> pages = new java.util.ArrayList<>();
+        for (String modele : CHEMIN_LE_PLUS_CHAUD) {
+            try {
+                pages.add(jasper.versPdf(modele, new java.util.HashMap<>(), List.of()));
+            } catch (RuntimeException erreur) {
+                // Un modele qui ne se remplit pas a vide n'empeche pas de
+                // rechauffer les autres, ni la fusion.
+                LOG.warn("Prechauffage du modele {} impossible.", modele, erreur);
+            }
+        }
+        if (pages.size() < 2) {
+            return;
+        }
         try {
-            byte[] page = jasper.versPdf("rapports/separateur_lot.jrxml",
-                    java.util.Map.of("LOT_LIBELLE", "prechauffage"), List.of());
-            assembleur.filigraner(assembleur.fusionner(List.of(page, page)));
+            assembleur.filigraner(assembleur.fusionner(pages));
         } catch (RuntimeException erreur) {
             // Un prechauffage qui echoue ne doit rien empecher : la premiere
-            // generation sera simplement plus lente.
-            LOG.warn("Prechauffage de l'assemblage impossible : {}", erreur.getMessage());
+            // generation sera simplement plus lente. Mais on trace l'exception
+            // entiere : une premiere version ne tracait que le message, et
+            // celui d'une UnsupportedOperationException est nul - le journal
+            // disait "impossible : null" et ne menait nulle part.
+            LOG.warn("Prechauffage du rendu impossible, la premiere generation "
+                    + "sera plus lente.", erreur);
         }
     }
 }
