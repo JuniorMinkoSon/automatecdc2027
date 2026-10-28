@@ -1,5 +1,6 @@
 package ci.smartex.offres.integration;
 
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @SpringBootTest
 @DisplayName("Schema PostgreSQL et isolation entre entreprises")
+@EnabledIfSystemProperty(named = "test.postgres.url", matches = ".+",
+        disabledReason = BasePostgres.RAISON)
 class SchemaEtIsolationTest extends BasePostgres {
 
     private static final UUID ORGANISATION_A = UUID.randomUUID();

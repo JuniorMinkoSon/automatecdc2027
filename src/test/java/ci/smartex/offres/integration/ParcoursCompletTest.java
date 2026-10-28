@@ -9,6 +9,7 @@ import ci.smartex.offres.securite.ContexteOrganisation;
 import ci.smartex.offres.service.ServiceDossier;
 import ci.smartex.offres.service.ServiceDqe;
 import ci.smartex.offres.service.ServiceRapprochement;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,6 +46,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Parcours complet : du DAO au dossier telechargeable")
+@EnabledIfSystemProperty(named = "test.postgres.url", matches = ".+",
+        disabledReason = BasePostgres.RAISON)
 class ParcoursCompletTest extends BasePostgres {
 
     @DynamicPropertySource

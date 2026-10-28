@@ -1,6 +1,5 @@
 package ci.smartex.offres.integration;
 
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -18,11 +17,20 @@ import org.springframework.test.context.DynamicPropertySource;
  * rouge qui ne lui apprend rien. Mais l'absence de base n'est alors jamais
  * presentee comme un succes - elle apparait comme un test ignore.
  */
-@EnabledIfSystemProperty(
-        named = "test.postgres.url",
-        matches = ".+",
-        disabledReason = "Aucune base fournie. Lancez infra/test/base-de-test.sh demarrer.")
 public abstract class BasePostgres {
+
+    /**
+     * A recopier sur chaque classe de test concrete.
+     *
+     * <p>{@code @EnabledIfSystemProperty} n'est pas {@code @Inherited} : posee
+     * ici, sur la classe de base, elle ne protegeait aucune sous-classe. Les
+     * tests se lancaient donc sans base, se rabattaient sur la configuration
+     * de l'application et echouaient sur une erreur d'authentification qui
+     * n'apprenait rien. Les classes imbriquees, elles, sont bien couvertes :
+     * JUnit n'ouvre pas un conteneur dont le parent est desactive.
+     */
+    public static final String RAISON =
+            "Aucune base fournie. Lancez infra/test/base-de-test.sh demarrer.";
 
     protected static String urlJdbc() {
         return System.getProperty("test.postgres.url");
