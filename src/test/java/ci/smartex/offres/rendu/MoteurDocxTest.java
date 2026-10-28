@@ -162,6 +162,98 @@ class MoteurDocxTest {
                 .hasMessageContaining(".docx");
     }
 
+    @Test
+    @DisplayName("un intitule en gras reste en gras quand le champ qui le suit est rempli")
+    void laMiseEnFormeDeLaLigneSurvit() throws Exception {
+        byte[] modele = modele(document -> {
+            XWPFParagraph paragraphe = document.createParagraph();
+            XWPFRun intitule = paragraphe.createRun();
+            intitule.setBold(true);
+            intitule.setText("Objet du marché : ");
+            XWPFRun champ = paragraphe.createRun();
+            champ.setText("{{OBJET}}");
+            XWPFRun fin = paragraphe.createRun();
+            fin.setItalic(true);
+            fin.setText(" (lot unique)");
+        });
+
+        byte[] rempli = moteur.remplir(modele,
+                Map.of("OBJET", "Construction de deux centres de santé"),
+                Map.of()).document();
+
+        try (XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(rempli))) {
+            XWPFParagraph paragraphe = document.getParagraphs().get(0);
+            String texte = paragraphe.getText();
+            assertThat(texte).isEqualTo(
+                    "Objet du marché : Construction de deux centres de santé (lot unique)");
+
+            // Le fond du test : la ligne melange trois mises en forme, et le
+            // remplacement ne doit en ecraser aucune.
+            List<XWPFRun> fragments = paragraphe.getRuns();
+            XWPFRun gras = fragments.stream()
+                    .filter(f -> "Objet du marché : ".equals(f.getText(0)))
+                    .findFirst().orElseThrow();
+            assertThat(gras.isBold()).as("l'intitule etait en gras").isTrue();
+
+            XWPFRun valeur = fragments.stream()
+                    .filter(f -> "Construction de deux centres de santé".equals(f.getText(0)))
+                    .findFirst().orElseThrow();
+            assertThat(valeur.isBold()).as("la valeur prend la forme du champ, pas du titre")
+                    .isFalse();
+
+            XWPFRun italique = fragments.stream()
+                    .filter(f -> " (lot unique)".equals(f.getText(0)))
+                    .findFirst().orElseThrow();
+            assertThat(italique.isItalic()).as("la fin de ligne etait en italique").isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("deux champs dans un meme paragraphe se remplissent tous les deux")
+    void deuxChampsDansLeMemeParagraphe() throws Exception {
+        byte[] modele = modele(document -> {
+            XWPFParagraph paragraphe = document.createParagraph();
+            // Word coupe volontiers un champ en plusieurs fragments : on
+            // reproduit exactement ce decoupage.
+            for (String morceau : List.of("Lot ", "{{", "NUMERO", "}}", " — ",
+                                          "{{LOCALITE}}", " (", "{{DELAI}}", " mois)")) {
+                paragraphe.createRun().setText(morceau);
+            }
+        });
+
+        byte[] rempli = moteur.remplir(modele,
+                Map.of("NUMERO", "1", "LOCALITE", "Première localité", "DELAI", "4"),
+                Map.of()).document();
+
+        try (XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(rempli))) {
+            assertThat(document.getParagraphs().get(0).getText())
+                    .isEqualTo("Lot 1 — Première localité (4 mois)");
+        }
+    }
+
+    @Test
+    @DisplayName("un .doc renomme en .docx dit quoi faire, pas seulement que c'est refuse")
+    void documentWordAncienFormat() {
+        // Les huit premiers octets d'un document Word 97-2003 : un conteneur
+        // OLE2. Renommer un tel fichier en .docx passe le controle
+        // d'extension, et c'est une manipulation que l'on fait de bonne foi.
+        byte[] ancienFormat = {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0,
+                               (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1,
+                               0x00, 0x00, 0x00, 0x00};
+
+        for (Runnable appel : List.<Runnable>of(
+                () -> moteur.remplir(ancienFormat, Map.of(), Map.of()),
+                () -> moteur.champsAttendus(ancienFormat))) {
+
+            assertThat(org.assertj.core.api.Assertions.catchThrowable(appel::run))
+                    .isInstanceOf(RenduImpossibleException.class)
+                    .hasMessageContaining("Word 97-2003")
+                    .hasMessageContaining("Enregistrer")
+                    .as("renommer ne convertit pas, et le message doit le dire")
+                    .hasMessageContaining("Renommer");
+        }
+    }
+
     // ------------------------------------------------------------------ outils
 
     private interface Constructeur {

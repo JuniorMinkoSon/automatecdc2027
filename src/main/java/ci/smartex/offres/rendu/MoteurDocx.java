@@ -35,6 +35,25 @@ import java.util.regex.Pattern;
 @Service
 public class MoteurDocx {
 
+    /**
+     * Signature d'un document Word 97-2003 : un conteneur OLE2 binaire.
+     *
+     * <p>Le controle d'extension ne suffit pas. Renommer un .doc en .docx ne
+     * le convertit pas, et c'est une manipulation que l'on fait de bonne foi
+     * en croyant regler le probleme. Sans ce diagnostic, la plateforme
+     * repondait que le fichier n'etait pas un .docx valide - exact, et sans
+     * aucune indication sur ce qu'il fallait faire.
+     */
+    private static final byte[] SIGNATURE_DOC =
+            {(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0,
+             (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1};
+
+    private static final String CONSEIL_DOC =
+            "Ce document est au format Word 97-2003 (.doc), que la plateforme ne "
+            + "sait pas remplir. Ouvrez-le dans Word, puis Fichier > Enregistrer "
+            + "sous > Document Word (.docx), et redeposez-le. Renommer le fichier "
+            + "ne suffit pas : c'est son contenu qui change.";
+
     /** {{CHAMP}}, avec espaces tolerés autour du nom. */
     private static final Pattern CHAMP = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_.]+)\\s*}}");
 
@@ -54,6 +73,7 @@ public class MoteurDocx {
                             Map<String, String> champs,
                             Map<String, List<Map<String, String>>> listes) {
 
+        exigerUnDocx(modele);
         Set<String> nonRenseignes = new TreeSet<>();
 
         try (XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(modele))) {
@@ -87,6 +107,7 @@ public class MoteurDocx {
      * dur une liste de questions qui vieillirait mal.
      */
     public Set<String> champsAttendus(byte[] modele) {
+        exigerUnDocx(modele);
         Set<String> trouves = new TreeSet<>();
         try (XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(modele))) {
             parcourirTextes(document, texte -> {
@@ -104,6 +125,26 @@ public class MoteurDocx {
                     erreur);
         }
         return trouves;
+    }
+
+    /**
+     * Refuse un .doc avant que POI ne s'en charge, pour dire quoi faire.
+     *
+     * <p>Un .docx est une archive : il commence par PK. Un .doc est un
+     * conteneur OLE2. POI distingue les deux, mais son message parle de HSSF
+     * et de XSSF - des noms de bibliotheques, qui n'apprennent rien a qui
+     * depose un document.
+     */
+    private void exigerUnDocx(byte[] fichier) {
+        if (fichier == null || fichier.length < SIGNATURE_DOC.length) {
+            return;
+        }
+        for (int index = 0; index < SIGNATURE_DOC.length; index++) {
+            if (fichier[index] != SIGNATURE_DOC[index]) {
+                return;
+            }
+        }
+        throw new RenduImpossibleException(CONSEIL_DOC, null);
     }
 
     // ------------------------------------------------------------------ listes
@@ -244,33 +285,99 @@ public class MoteurDocx {
             return;
         }
 
-        StringBuilder resultat = new StringBuilder();
+        List<int[]> champs = new ArrayList<>();
+        List<String> remplacements = new ArrayList<>();
         Matcher marque = CHAMP.matcher(texte);
-        int curseur = 0;
-        boolean modifie = false;
-
         while (marque.find()) {
-            resultat.append(texte, curseur, marque.start());
             String nom = marque.group(1);
             String valeur = valeurs.get(nom);
-
             if (valeur == null || valeur.isBlank()) {
                 if (!silencieuxSiAbsent) {
                     nonRenseignes.add(nom);
                 }
                 // Le champ reste visible, et visiblement a completer : un blanc
                 // silencieux passerait inapercu jusqu'au depot.
-                resultat.append("[à compléter : ").append(nom).append(']');
-            } else {
-                resultat.append(valeur);
+                valeur = "[à compléter : " + nom + "]";
             }
-            curseur = marque.end();
-            modifie = true;
+            champs.add(new int[]{marque.start(), marque.end()});
+            remplacements.add(valeur);
         }
-        resultat.append(texte.substring(curseur));
 
-        if (modifie) {
-            ecrireParagraphe(paragraphe, resultat.toString());
+        // Du dernier champ vers le premier : ce qui est a gauche d'un champ
+        // n'est pas deplace par une pose faite a sa droite, donc les positions
+        // relevees sur le texte d'origine restent justes jusqu'au bout.
+        for (int rang = champs.size() - 1; rang >= 0; rang--) {
+            poser(paragraphe, champs.get(rang)[0], champs.get(rang)[1],
+                    remplacements.get(rang));
+        }
+    }
+
+    /**
+     * Ecrit une valeur a la place d'un champ, sans toucher au reste du
+     * paragraphe.
+     *
+     * <p>La version precedente reecrivait le paragraphe entier avec la mise
+     * en forme de son premier fragment. Sur un vrai document, une ligne melange
+     * presque toujours un intitule en gras et une valeur en normal - « Objet
+     * du marche : {{OBJET}} » - et tout y passait. Seuls les fragments que le
+     * champ occupe sont donc modifies ; la valeur prend la mise en forme du
+     * fragment ou le champ commence, c'est-a-dire la sienne.
+     *
+     * <p>Les reperes sont releves a chaque appel plutot que tenus a jour :
+     * un paragraphe compte quelques dizaines de fragments, et une position
+     * fausse ecrirait au mauvais endroit dans le document de quelqu'un.
+     */
+    private void poser(XWPFParagraph paragraphe, int debut, int fin, String valeur) {
+        List<XWPFRun> fragments = paragraphe.getRuns();
+
+        // Fragment porteur de texte -> ou il commence. Un fragment sans texte
+        // - une image, un saut de ligne - n'y figure pas et reste intact.
+        List<int[]> reperes = new ArrayList<>();
+        int curseur = 0;
+        for (int index = 0; index < fragments.size(); index++) {
+            String morceau = fragments.get(index).getText(0);
+            if (morceau == null || morceau.isEmpty()) {
+                continue;
+            }
+            reperes.add(new int[]{index, curseur, morceau.length()});
+            curseur += morceau.length();
+        }
+
+        int premier = -1;
+        int dernier = -1;
+        for (int rang = 0; rang < reperes.size(); rang++) {
+            int ouvre = reperes.get(rang)[1];
+            int ferme = ouvre + reperes.get(rang)[2];
+            if (premier < 0 && ferme > debut) {
+                premier = rang;
+            }
+            if (premier >= 0) {
+                if (ouvre >= fin) {
+                    break;
+                }
+                dernier = rang;
+            }
+        }
+        if (premier < 0) {
+            return;
+        }
+
+        // De droite a gauche : modifier un fragment ne change pas la position
+        // de ceux qui le precedent.
+        for (int rang = dernier; rang >= premier; rang--) {
+            int[] repere = reperes.get(rang);
+            XWPFRun fragment = fragments.get(repere[0]);
+            String morceau = fragment.getText(0);
+            int ouvre = repere[1];
+
+            String avant = morceau.substring(0, Math.max(0, Math.min(morceau.length(),
+                    debut - ouvre)));
+            String apres = fin - ouvre < morceau.length()
+                    ? morceau.substring(Math.max(0, fin - ouvre))
+                    : "";
+            // La valeur n'est posee qu'une fois, dans le fragment ou le champ
+            // commence ; les suivants ne gardent que ce qui depasse.
+            fragment.setText(rang == premier ? avant + valeur + apres : avant + apres, 0);
         }
     }
 
