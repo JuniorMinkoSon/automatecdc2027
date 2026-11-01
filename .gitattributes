@@ -1,0 +1,10 @@
+# Ce qui s'execute ou se lit sur le serveur Linux garde des fins de ligne
+# Unix, quelle que soit la machine qui l'a extrait. Un script shell en CRLF
+# echoue sur "\r: command not found", et un Caddyfile ou un Dockerfile en
+# CRLF peut se lire de travers - loin de l'endroit ou il a ete casse.
+*.sh         text eol=lf
+Caddyfile*   text eol=lf
+Dockerfile   text eol=lf
+*.sql        text eol=lf
+*.yml        text eol=lf
+.env.example text eol=lf
