@@ -16,7 +16,8 @@ services:
       DOMAINE: ${DOMAINE}
       EMAIL_ACME: ${EMAIL_ACME}
     volumes:
-      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Caddyfile pour un domaine, Caddyfile.ip pour une IP nue sans HTTPS.
+      - ${CADDYFILE:-./infra/caddy/Caddyfile}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -39,7 +40,11 @@ services:
       APP_OCR_URL: http://ocr:5000
       APP_GOTENBERG_URL: http://gotenberg:3000
       APP_STOCKAGE_RACINE: /var/automatecdc/fichiers
-      APP_URL_PUBLIQUE: https://${DOMAINE}
+      # Ce que les liens signes et les courriels mettront devant les chemins.
+      APP_URL_PUBLIQUE: ${URL_PUBLIQUE:-https://${DOMAINE}}
+      # Faux uniquement sans HTTPS : voir application.yml, le navigateur
+      # refuserait sinon de renvoyer le cookie de session.
+      APP_COOKIE_SECURE: ${COOKIE_SECURE:-true}
       APP_CLE_LIENS_SIGNES: ${CLE_LIENS_SIGNES}
       APP_CLE_CHIFFREMENT_FICHIERS: ${CLE_CHIFFREMENT_FICHIERS}
       APP_PAIEMENT_SECRET_SIGNATURE: ${PAIEMENT_SECRET_SIGNATURE}

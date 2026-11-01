@@ -64,7 +64,13 @@ server:
       cookie:
         http-only: true
         same-site: lax
-        secure: true
+        # Vrai par defaut, et il doit le rester : un cookie de session qui
+        # circule en clair se lit sur le reseau. Ne passer a faux que pour un
+        # deploiement provisoire sur une IP nue, ou Let's Encrypt ne peut pas
+        # delivrer de certificat. Sinon le navigateur garde le cookie pour lui,
+        # la connexion parait reussir et renvoie aussitot vers la page de
+        # connexion - une panne qui ne dit pas son nom.
+        secure: ${APP_COOKIE_SECURE:true}
 
 org:
   jobrunr:

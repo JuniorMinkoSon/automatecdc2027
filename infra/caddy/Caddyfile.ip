@@ -1,0 +1,46 @@
+#
+# Variante pour un deploiement provisoire sur une IP nue, sans domaine.
+#
+# Let's Encrypt ne delivre pas de certificat pour une adresse IP : il n'y a
+# donc pas de HTTPS ici, et tout circule en clair - mots de passe compris.
+# C'est utilisable pour montrer et pour tester, pas pour y deposer un vrai
+# dossier. Des qu'un domaine pointe vers le serveur, repasser au Caddyfile
+# normal, qui lui obtient un certificat tout seul.
+#
+# Les differences avec le Caddyfile de production se limitent a cela :
+#   - ecoute sur :80 au lieu du domaine ;
+#   - pas d'en-tete Strict-Transport-Security, qui n'a aucun sens sans TLS et
+#     qui, pose par erreur, condamnerait le navigateur a refuser le site.
+# Tout le reste est identique, y compris le blocage des chemins internes.
+
+:80 {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	# Le tableau de bord des taches et les sondes ne sortent pas du VPS.
+	@interdit path /actuator/* /tableau-taches/*
+	respond @interdit 404
+
+	request_body {
+		max_size 64MB
+	}
+
+	reverse_proxy app:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+
+	log {
+		output file /data/acces.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}

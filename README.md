@@ -38,9 +38,21 @@ l'extraction échoue, le DAO reste déposé et les champs se saisissent à la ma
 ### En production
 
 ```bash
-cp .env.example .env     # puis remplir chaque ligne
-docker compose up -d --build
+cp .env.example .env                    # puis remplir chaque ligne
+./infra/deploiement/deployer.sh
 ```
+
+Le script vérifie le `.env` avant de construire : il refuse de partir sur une
+configuration incomplète, et il refuse un domaine qui ne pointe pas encore vers
+le serveur — sinon le certificat échoue et le site reste inaccessible sans que
+rien ne l'explique.
+
+Si `DOMAINE` contient une **adresse IP** plutôt qu'un nom, le déploiement se
+fait **sans HTTPS** : Let's Encrypt ne certifie pas une IP. Le script le dit,
+bascule sur `infra/caddy/Caddyfile.ip` et désactive l'attribut `secure` du
+cookie de session — sans quoi le navigateur le garderait pour lui et la
+connexion échouerait sans message. Tout circule alors en clair, mots de passe
+compris : bon pour montrer, pas pour y déposer un vrai dossier.
 
 Les secrets se génèrent avec `openssl rand -base64 36`.
 
